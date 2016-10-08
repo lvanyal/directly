@@ -5,4 +5,6 @@ package com.iph.directly.view;
  */
 
 public interface LoadingView {
+    void showProgress(int progress);
+    void navigateToToilets();
 }
