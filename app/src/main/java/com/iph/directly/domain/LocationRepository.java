@@ -10,5 +10,4 @@ import rx.Observable;
 
 public interface LocationRepository {
     Observable<Location> getCurrentLocation();
-    Observable<String> getCurrentCity(Location location);
 }
