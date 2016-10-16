@@ -1,11 +1,16 @@
 package com.iph.directly.presenter;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+
 import com.iph.directly.domain.LocationRepository;
-import com.iph.directly.domain.LocationRepositoryMockImpl;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.view.LoadingView;
 
+import rx.Observable;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import timber.log.Timber;
 
@@ -26,10 +31,14 @@ public class LoadingPresenter {
     }
 
     public void start() {
-        loadingView.showProgress(0);
-        currentSubscription = locationRepository.getCurrentLocation().subscribe(location -> {
+        loadingView.showProgress();
+        currentSubscription = locationRepository.getCurrentLocation()
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(location -> {
             loadingView.navigateToToilets(location);
         }, throwable -> {
+            if (throwable instanceof SecurityException) {
+                loadingView.showRequestLocationPermission();
+            } else
             Timber.e(throwable.getMessage(), throwable);
         });
     }
@@ -39,5 +48,13 @@ public class LoadingPresenter {
             currentSubscription.unsubscribe();
             currentSubscription = null;
         }
+    }
+
+    public void locationPermissionSuccess() {
+        start();
+    }
+
+    public void locationPermissionFailed() {
+        loadingView.navigateToToilets(null);
     }
 }

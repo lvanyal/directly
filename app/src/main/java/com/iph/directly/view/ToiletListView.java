@@ -1,5 +1,6 @@
 package com.iph.directly.view;
 
+import com.iph.directly.domain.model.Location;
 import com.iph.directly.domain.model.Toilet;
 
 import java.util.List;
@@ -14,4 +15,5 @@ public interface ToiletListView {
     void hideProgress();
     void showEmptyView();
     void hideEmptyView();
+    void navigateToDirection(Toilet toilet, Location location);
 }

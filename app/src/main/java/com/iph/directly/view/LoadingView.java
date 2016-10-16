@@ -7,7 +7,9 @@ import com.iph.directly.domain.model.Location;
  */
 
 public interface LoadingView {
-    void showProgress(int progress);
+    void showProgress();
 
     void navigateToToilets(Location location);
+
+    void showRequestLocationPermission();
 }

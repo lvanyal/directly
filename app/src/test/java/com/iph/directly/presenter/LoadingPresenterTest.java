@@ -1,19 +1,15 @@
 package com.iph.directly.presenter;
 
 import com.iph.directly.domain.LocationRepository;
-import com.iph.directly.domain.LocationRepositoryMockImpl;
+import com.iph.directly.domain.LocationRepositoryImpl;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.view.LoadingView;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import rx.functions.Action1;
 
 import static org.mockito.Mockito.*;
 
@@ -30,7 +26,7 @@ public class LoadingPresenterTest {
 
     @Before
     public void initMocks() {
-        LocationRepository locationRepository = new LocationRepositoryMockImpl(LOCATION);
+        LocationRepository locationRepository = new LocationRepositoryImpl(LOCATION);
         loadingPresenter = new LoadingPresenter(loadingView, locationRepository);
     }
 
@@ -40,7 +36,7 @@ public class LoadingPresenterTest {
     @Test
     public void start() throws Exception {
         loadingPresenter.start();
-        verify(loadingView).showProgress(0);
+        verify(loadingView).showProgress();
         verify(loadingView).navigateToToilets(LOCATION);
     }
 

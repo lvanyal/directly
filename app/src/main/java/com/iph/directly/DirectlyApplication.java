@@ -1,6 +1,7 @@
 package com.iph.directly;
 
 import android.app.Application;
+import android.content.Context;
 
 import com.directly.iph.directly.BuildConfig;
 
@@ -11,6 +12,8 @@ import timber.log.Timber;
  */
 
 public class DirectlyApplication extends Application {
+
+    private static Application application;
 
     @Override
     public void onCreate() {

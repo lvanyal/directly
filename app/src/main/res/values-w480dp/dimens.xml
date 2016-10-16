@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="toilet_list_item_name_width">300dp</dimen>
+    <dimen name="toilet_list_price_margit_left">24dp</dimen>
+</resources>

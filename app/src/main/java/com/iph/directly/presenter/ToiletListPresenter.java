@@ -5,6 +5,7 @@ import com.iph.directly.domain.model.Location;
 import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.view.ToiletListView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import rx.Subscription;
@@ -22,6 +23,7 @@ public class ToiletListPresenter {
     private Location location;
 
     private Subscription currentToiletSubscription;
+    private List<Toilet> toilets = new ArrayList<>();
 
     public ToiletListPresenter(ToiletListView toiletListView, ToiletRepository toiletRepository, Location location) {
         this.toiletListView = toiletListView;
@@ -31,17 +33,22 @@ public class ToiletListPresenter {
 
     public void start() {
         toiletListView.showProgress();
-        currentToiletSubscription = toiletRepository.getToilets(location).subscribe(toilets -> {
-            toiletListView.hideProgress();
-            if (toilets == null || toilets.isEmpty()) {
-                toiletListView.showEmptyView();
-            } else {
-                toiletListView.showToiletList(toilets);
-            }
-        }, throwable -> {
-            toiletListView.hideProgress();
-            Timber.e(throwable.getMessage(), throwable);
-        });
+        if (toilets.isEmpty()) {
+            currentToiletSubscription = toiletRepository.getToilets(location).subscribe(toilets -> {
+                toiletListView.hideProgress();
+                if (toilets == null || toilets.isEmpty()) {
+                    toiletListView.showEmptyView();
+                } else {
+                    this.toilets = toilets;
+                    toiletListView.showToiletList(toilets);
+                }
+            }, throwable -> {
+                toiletListView.hideProgress();
+                Timber.e(throwable.getMessage(), throwable);
+            });
+        } else {
+            toiletListView.showToiletList(toilets);
+        }
     }
 
     public void stop() {
@@ -49,5 +56,9 @@ public class ToiletListPresenter {
             currentToiletSubscription.unsubscribe();
             currentToiletSubscription = null;
         }
+    }
+
+    public void toiletChoose(Toilet toilet) {
+        toiletListView.navigateToDirection(toilet, location);
     }
 }

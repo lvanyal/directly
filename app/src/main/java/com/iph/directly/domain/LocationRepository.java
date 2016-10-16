@@ -1,5 +1,6 @@
 package com.iph.directly.domain;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.iph.directly.domain.model.Location;
 
 import rx.Observable;
@@ -10,4 +11,5 @@ import rx.Observable;
 
 public interface LocationRepository {
     Observable<Location> getCurrentLocation();
+    Observable<LatLng> getToiletLocation(String toiletAddress);
 }
