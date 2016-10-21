@@ -2,6 +2,7 @@ package com.iph.directly.presenter;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.iph.directly.domain.DirectionRepository;
+import com.iph.directly.domain.apimodel.RouteResponse;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.view.MapView;
@@ -33,10 +34,10 @@ public class MapPresenter {
     }
 
     public void toiletChosen(Toilet toilet) {
-        currentSubscription = directionRepository.getDirectionToToilet(currentLocation, toilet).subscribe(new Action1<List<LatLng>>() {
+        currentSubscription = directionRepository.getDirectionToToilet(currentLocation, toilet).subscribe(new Action1<RouteResponse>() {
             @Override
-            public void call(List<LatLng> latLngs) {
-                mapView.showDirection(latLngs);
+            public void call(RouteResponse routeResponse) {
+                //// TODO: 10/20/2016 show route
             }
         }, throwable -> {
             Timber.e(throwable.getMessage(), throwable);

@@ -30,6 +30,7 @@ public class ToiletRepositoryImpl implements ToiletRepository {
     private static final String COLUMN_STOP_TIME = "time_stop";
     private static final String COLUMN_ADDRESS = "address";
     private static final String COLUMN_IS_24HOURS = "24hours";
+    private static final String COLUMN_CITY = "city";
 
     private ToiletApi toiletApi;
 
@@ -40,7 +41,8 @@ public class ToiletRepositoryImpl implements ToiletRepository {
     @Override
     public Observable<List<Toilet>> getToilets(Location location) {
         return toiletApi.toiletList(location.getCity() + "_wc")
-                .flatMap(cityToiletsResponse -> toiletApi.getToiletsSource(cityToiletsResponse.getResourceUrl()))
+                .flatMap(cityToiletsResponse ->
+                        toiletApi.getToiletsSource(cityToiletsResponse.getResourceUrl()))
                 .flatMap(responseBody -> Observable.create((Observable.OnSubscribe<List<Toilet>>) subscriber -> {
                     try {
                         String string = responseBody.body().string();
@@ -68,6 +70,7 @@ public class ToiletRepositoryImpl implements ToiletRepository {
         int stopTimeIndex = titleList.indexOf(COLUMN_STOP_TIME);
         int addressIndex = titleList.indexOf(COLUMN_ADDRESS);
         int is24HoursIndex = titleList.indexOf(COLUMN_IS_24HOURS);
+        int cityIndex = titleList.indexOf(COLUMN_CITY);
 
         List<Toilet> result = new ArrayList<>();
 
@@ -80,6 +83,7 @@ public class ToiletRepositoryImpl implements ToiletRepository {
             toilet.setEndTime(row[stopTimeIndex]);
             toilet.setAddress(row[addressIndex]);
             toilet.setIs24h(Boolean.parseBoolean(row[is24HoursIndex]));
+            toilet.setCity(row[cityIndex]);
 
             result.add(toilet);
         }

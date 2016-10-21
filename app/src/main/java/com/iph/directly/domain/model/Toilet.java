@@ -3,6 +3,8 @@ package com.iph.directly.domain.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.gson.annotations.Expose;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -10,15 +12,35 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  * Created by vanya on 10/8/2016.
  */
 
-public class Toilet implements Parcelable{
+public class Toilet implements Parcelable {
+    @Expose
     private String name;
+
+    @Expose
     private float price;
+
+    @Expose
     private String startTime;
+
+    @Expose
     private String endTime;
+
+    @Expose
     private String address;
+
+    @Expose
     private boolean is24h;
 
-    public Toilet() {}
+    @Expose
+    private String placeId;
+
+    @Expose
+    private String city;
+
+    private int distance;
+
+    public Toilet() {
+    }
 
     protected Toilet(Parcel in) {
         name = in.readString();
@@ -27,6 +49,8 @@ public class Toilet implements Parcelable{
         endTime = in.readString();
         address = in.readString();
         is24h = in.readByte() != 0;
+        placeId = in.readString();
+        city = in.readString();
     }
 
     public static final Creator<Toilet> CREATOR = new Creator<Toilet>() {
@@ -89,6 +113,30 @@ public class Toilet implements Parcelable{
         this.is24h = is24h;
     }
 
+    public String getPlaceId() {
+        return placeId;
+    }
+
+    public void setPlaceId(String placeId) {
+        this.placeId = placeId;
+    }
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -132,5 +180,7 @@ public class Toilet implements Parcelable{
         dest.writeString(endTime);
         dest.writeString(address);
         dest.writeByte((byte) (is24h ? 1 : 0));
+        dest.writeString(placeId);
+        dest.writeString(city);
     }
 }

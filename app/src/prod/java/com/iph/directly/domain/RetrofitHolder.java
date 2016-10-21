@@ -1,5 +1,9 @@
 package com.iph.directly.domain;
 
+import com.directly.iph.directly.BuildConfig;
+
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -10,21 +14,46 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitHolder {
     private static RetrofitHolder ourInstance = new RetrofitHolder();
 
-    private Retrofit retrofit;
+    private static final String DIRECTION_API_URL = "https://maps.googleapis.com";
+    private static final String SERVER_URL = "https://data.danimist.org.ua/";
 
-    public static RetrofitHolder getInstance() {
+
+    private Retrofit retrofit;
+    private Retrofit googleApiRetrofit;
+
+    static RetrofitHolder getInstance() {
         return ourInstance;
     }
 
     private RetrofitHolder() {
-        retrofit = new Retrofit.Builder()
-                .baseUrl("https://data.danimist.org.ua/")
+        Retrofit.Builder builder = new Retrofit.Builder();
+        if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+            OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+
+            httpClient.addInterceptor(logging);
+            builder.client(httpClient.build());
+        }
+        retrofit = builder
+                .baseUrl(SERVER_URL)
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        googleApiRetrofit = builder
+                .baseUrl(DIRECTION_API_URL)
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
     }
 
-    public Retrofit getRetrofit() {
+    Retrofit getRetrofit() {
         return retrofit;
+    }
+
+    Retrofit getGoogleApiRetrofit() {
+        return googleApiRetrofit;
     }
 }

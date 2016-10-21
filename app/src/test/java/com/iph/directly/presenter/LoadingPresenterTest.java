@@ -20,7 +20,8 @@ import static org.mockito.Mockito.*;
 public class LoadingPresenterTest {
 
     private static final String CITY = "Lviv";
-    private static final Location LOCATION = new Location(49.844063, 24.025633, CITY);
+    private static final String COUNTRY = "Ukraine";
+    private static final Location LOCATION = new Location(49.844063, 24.025633, CITY, COUNTRY);
 
     private LoadingPresenter loadingPresenter;
 

@@ -53,7 +53,7 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         Location location = getArguments().getParcelable(EXTRA_LOCATION);
-        toiletListPresenter = new ToiletListPresenter(this, Injector.provideToiletRepository(), location);
+        toiletListPresenter = new ToiletListPresenter(this, Injector.provideToiletRepository(), Injector.provideLocationRepository(getActivity()), Injector.provideDirectionRepository(getActivity()), location);
     }
 
     @Override
@@ -136,6 +136,11 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
         }
     }
 
+    @Override
+    public void updateToiletPositionInList(Toilet toilet) {
+        toiletsAdapter.notifyDataSetChanged();
+    }
+
     private class ToiletsAdapter extends RecyclerView.Adapter<ToiletHolder> {
 
         private List<Toilet> toilets = new ArrayList<>();
@@ -157,6 +162,7 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
             holder.price.setText(String.format(Locale.getDefault(), "%.2f %s", toilet.getPrice(), getString(R.string.uah)));
             holder.address.setText(toilet.getAddress());
             holder.workTime.setText(String.format(Locale.getDefault(), "%s-%s", toilet.getStartTime(), toilet.getEndTime()));
+            holder.distance.setText(toilet.getDistance() + "m");
 
             holder.itemView.setOnClickListener(v -> {
                 toiletListPresenter.toiletChoose(toilet);

@@ -16,4 +16,6 @@ public interface ToiletListView {
     void showEmptyView();
     void hideEmptyView();
     void navigateToDirection(Toilet toilet, Location location);
+
+    void updateToiletPositionInList(Toilet toilet);
 }

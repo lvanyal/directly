@@ -12,3 +12,4 @@
 /.idea/
 /.gradle/
 /app/src/debug/res/values/map_api_key.xml
+/gradle.properties

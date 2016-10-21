@@ -1,6 +1,7 @@
 package com.iph.directly.domain;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.iph.directly.domain.apimodel.RouteResponse;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.domain.model.Toilet;
 
@@ -13,5 +14,6 @@ import rx.Observable;
  */
 
 public interface DirectionRepository {
-    Observable<List<LatLng>> getDirectionToToilet(Location currentLocation, Toilet toilet);
+    Observable<RouteResponse> getDirectionToToilet(Location currentLocation, Toilet toilet);
+    Observable<Toilet> initDistanceToToilet(Location currentLocation, Toilet toilet);
 }

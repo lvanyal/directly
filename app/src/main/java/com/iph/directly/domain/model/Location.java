@@ -15,15 +15,18 @@ public class Location implements Parcelable{
     private LatLng latLng;
 
     private String city;
+    private String country;
 
-    public Location(double latitude, double longitude, String city) {
+    public Location(double latitude, double longitude, String city, String country) {
         this.latLng = new LatLng(latitude, longitude);
         this.city = city;
+        this.country = country;
     }
 
     protected Location(Parcel in) {
         latLng = in.readParcelable(LatLng.class.getClassLoader());
         city = in.readString();
+        country = in.readString();
     }
 
     public static final Creator<Location> CREATOR = new Creator<Location>() {
@@ -63,5 +66,14 @@ public class Location implements Parcelable{
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeParcelable(latLng, flags);
         dest.writeString(city);
+        dest.writeString(country);
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 }
