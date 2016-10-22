@@ -1,5 +1,7 @@
 package com.iph.directly.fragment;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -10,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.directly.iph.directly.R;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.iph.directly.domain.Injector;
 import com.iph.directly.domain.model.Location;
@@ -96,7 +99,7 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
 
     @Override
     public void navigateToDirection(Toilet toilet, Location location) {
-        SupportMapFragment fragment;
+        DirectionFragment fragment;
         if (getFragmentManager().findFragmentByTag(MAP_TAG) == null) {
             fragment = new DirectionFragment();
             getFragmentManager()
@@ -106,7 +109,7 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
                     .addToBackStack(MAP_TAG)
                     .commit();
         } else {
-            fragment = (SupportMapFragment) getFragmentManager().findFragmentByTag(MAP_TAG);
+            fragment = (DirectionFragment) getFragmentManager().findFragmentByTag(MAP_TAG);
             getFragmentManager()
                     .beginTransaction()
                     .hide(this)
@@ -137,8 +140,17 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
     }
 
     @Override
-    public void updateToiletPositionInList(Toilet toilet) {
+    public void updateToiletPositionInList(List<Toilet> toilets) {
+        toiletsAdapter.setToilets(toilets);
         toiletsAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void navigateToMapsApp(Toilet toilet) {
+        Uri gmmIntentUri = Uri.parse(String.format(Locale.getDefault(), "geo:0,0?q=%s+%s", toilet.getCity(), toilet.getAddress()));
+        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+        mapIntent.setPackage("com.google.android.apps.maps");
+        startActivity(mapIntent);
     }
 
     private class ToiletsAdapter extends RecyclerView.Adapter<ToiletHolder> {
@@ -162,7 +174,7 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
             holder.price.setText(String.format(Locale.getDefault(), "%.2f %s", toilet.getPrice(), getString(R.string.uah)));
             holder.address.setText(toilet.getAddress());
             holder.workTime.setText(String.format(Locale.getDefault(), "%s-%s", toilet.getStartTime(), toilet.getEndTime()));
-            holder.distance.setText(toilet.getDistance() + "m");
+            holder.distance.setText(getFormattedDistance(toilet.getDistance()));
 
             holder.itemView.setOnClickListener(v -> {
                 toiletListPresenter.toiletChoose(toilet);
@@ -172,6 +184,16 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
         @Override
         public int getItemCount() {
             return toilets.size();
+        }
+
+        private String getFormattedDistance(int meters) {
+            String formattedDistance;
+            if (meters < 1000) {
+                formattedDistance = String.format(Locale.getDefault(), "%d%s", meters, getString(R.string.meters));
+            } else {
+                formattedDistance = String.format(Locale.getDefault(), "%d.2%s", meters / 1000, getString(R.string.km));
+            }
+            return formattedDistance;
         }
     }
 }

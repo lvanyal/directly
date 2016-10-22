@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.directly.iph.directly.R;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.PolyUtil;
 import com.iph.directly.domain.apimodel.RouteResponse;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.domain.model.Toilet;
@@ -37,12 +38,16 @@ public class DirectionRepositoryImpl implements DirectionRepository {
     @Override
     public Observable<RouteResponse> getDirectionToToilet(Location currentLocation, Toilet toilet) {
         LatLng currentLatLng = currentLocation.getLatLng();
-        return directionApi.getRoute(currentLatLng.latitude + "," + currentLatLng.longitude, "place_id:" + toilet.getPlaceId(), true, "walking", "en", directionApiKey);
+        return directionApi
+                .getRoute(currentLatLng.latitude + "," + currentLatLng.longitude, "place_id:" + toilet.getPlaceId(), true, "walking", "en", directionApiKey)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     @Override
     public Observable<Toilet> initDistanceToToilet(Location currentLocation, Toilet toilet) {
-        return getDirectionToToilet(currentLocation, toilet)
+        return directionApi
+                .getRoute(currentLocation.getLatLng().latitude + "," + currentLocation.getLatLng().longitude, "place_id:" + toilet.getPlaceId(), true, "walking", "en", directionApiKey)
                 .map(routeResponse -> {
                     toilet.setDistance(routeResponse.getDistance());
                     return toilet;

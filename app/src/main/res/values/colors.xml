@@ -6,4 +6,6 @@
 
     <color name="backgroundColor">#fff</color>
     <color name="highLightColor">#efefef</color>
+
+    <color name="mapRouteColor">#d2420d59</color>
 </resources>

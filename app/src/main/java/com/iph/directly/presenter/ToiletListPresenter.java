@@ -1,5 +1,7 @@
 package com.iph.directly.presenter;
 
+import android.text.TextUtils;
+
 import com.iph.directly.domain.DirectionRepository;
 import com.iph.directly.domain.LocationRepository;
 import com.iph.directly.domain.ToiletRepository;
@@ -8,6 +10,7 @@ import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.view.ToiletListView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import rx.Observable;
@@ -66,11 +69,22 @@ public class ToiletListPresenter {
     private void loadDistances() {
         currentLocationSubscription = Observable.from(toilets)
                 .flatMap(toilet -> locationRepository.initPlaceId(location, toilet))
-                .flatMap(toilet -> directionRepository.initDistanceToToilet(ToiletListPresenter.this.location, toilet))
+                .flatMap(toilet -> toilet.getPlaceId() != null ? directionRepository.initDistanceToToilet(ToiletListPresenter.this.location, toilet) : Observable.just(toilet))
+                .toList()
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(toilet -> {
-                    toiletListView.updateToiletPositionInList(toilet);
+                .subscribe(toilets -> {
+                    Collections.sort(toilets, (toilet1, toilet2) -> {
+                        if (toilet2.getDistance() == 0) {
+                            return -1;
+                        } else if (toilet1.getDistance() == 0){
+                            return 1;
+                        } else {
+                            return toilet1.getDistance() - toilet2.getDistance();
+                        }
+                    });
+                    this.toilets = toilets;
+                    toiletListView.updateToiletPositionInList(toilets);
                 }, throwable -> {
                     Timber.e(throwable.getMessage(), throwable);
                 });
@@ -89,6 +103,10 @@ public class ToiletListPresenter {
     }
 
     public void toiletChoose(Toilet toilet) {
-        toiletListView.navigateToDirection(toilet, location);
+        if (TextUtils.isEmpty(toilet.getPlaceId())) {
+            toiletListView.navigateToMapsApp(toilet);
+        } else {
+            toiletListView.navigateToDirection(toilet, location);
+        }
     }
 }

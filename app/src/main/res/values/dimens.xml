@@ -4,5 +4,7 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="toilet_list_item_name_width">196dp</dimen>
-    <dimen name="toilet_list_price_margit_left">8dp</dimen>
+    <dimen name="toilet_list_price_margit_left">4dp</dimen>
+
+    <dimen name="map_route_width">8dp</dimen>
 </resources>

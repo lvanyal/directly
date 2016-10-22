@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">Навпростець</string>
     <string name="uah">грн</string>
+    <string name="km">km</string>
+    <string name="meters">m</string>
 </resources>
