@@ -3,6 +3,7 @@ package com.iph.directly.presenter;
 import android.text.TextUtils;
 
 import com.iph.directly.domain.DirectionRepository;
+import com.iph.directly.domain.FacebookRepository;
 import com.iph.directly.domain.LocationRepository;
 import com.iph.directly.domain.ToiletRepository;
 import com.iph.directly.domain.model.Location;
@@ -16,7 +17,6 @@ import java.util.List;
 import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import timber.log.Timber;
 
@@ -29,6 +29,7 @@ public class ToiletListPresenter {
     private ToiletListView toiletListView;
     private ToiletRepository toiletRepository;
     private LocationRepository locationRepository;
+    private FacebookRepository facebookRepository;
 
     private Location location;
 
@@ -36,12 +37,18 @@ public class ToiletListPresenter {
     private Subscription currentLocationSubscription;
     private List<Toilet> toilets = new ArrayList<>();
 
-    public ToiletListPresenter(ToiletListView toiletListView, ToiletRepository toiletRepository, LocationRepository locationRepository, DirectionRepository directionRepository, Location location) {
+    public ToiletListPresenter(ToiletListView toiletListView
+            , ToiletRepository toiletRepository
+            , LocationRepository locationRepository
+            , DirectionRepository directionRepository
+            , FacebookRepository facebookRepository
+            , Location location) {
         this.toiletListView = toiletListView;
         this.toiletRepository = toiletRepository;
         this.locationRepository = locationRepository;
         this.location = location;
         this.directionRepository = directionRepository;
+        this.facebookRepository = facebookRepository;
     }
 
     public void start() {
@@ -77,7 +84,7 @@ public class ToiletListPresenter {
                     Collections.sort(toilets, (toilet1, toilet2) -> {
                         if (toilet2.getDistance() == 0) {
                             return -1;
-                        } else if (toilet1.getDistance() == 0){
+                        } else if (toilet1.getDistance() == 0) {
                             return 1;
                         } else {
                             return toilet1.getDistance() - toilet2.getDistance();
@@ -107,6 +114,14 @@ public class ToiletListPresenter {
             toiletListView.navigateToMapsApp(toilet);
         } else {
             toiletListView.navigateToDirection(toilet, location);
+        }
+    }
+
+    public void newToiletClicked() {
+        if (facebookRepository.isSignedIn()) {
+            toiletListView.navigateToToiletCreation();
+        } else {
+            toiletListView.navigateToFbAuth();
         }
     }
 }

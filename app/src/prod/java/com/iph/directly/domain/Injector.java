@@ -19,4 +19,8 @@ public class Injector {
     public static DirectionRepository provideDirectionRepository(Context activity) {
         return new DirectionRepositoryImpl(activity);
     }
+
+    public static FacebookRepository provideFacebookRepository() {
+        return new FacebookRepositoryImpl();
+    }
 }

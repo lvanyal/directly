@@ -20,4 +20,8 @@ public interface ToiletListView {
     void updateToiletPositionInList(List<Toilet> toilet);
 
     void navigateToMapsApp(Toilet toilet);
+
+    void navigateToToiletCreation();
+
+    void navigateToFbAuth();
 }

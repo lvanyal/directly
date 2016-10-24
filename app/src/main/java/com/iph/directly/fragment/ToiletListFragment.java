@@ -3,17 +3,37 @@ package com.iph.directly.fragment;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.directly.iph.directly.R;
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.iph.directly.domain.FacebookRepository;
 import com.iph.directly.domain.Injector;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.domain.model.Toilet;
@@ -21,8 +41,12 @@ import com.iph.directly.presenter.ToiletListPresenter;
 import com.iph.directly.view.ToiletListView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Executor;
+
+import timber.log.Timber;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -31,11 +55,15 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
 
     public static final String EXTRA_LOCATION = "extra_location";
     public static final String MAP_TAG = "mapTag";
+    private static final String TAG = ToiletListFragment.class.getName();
+
+    private FirebaseAuth firebaseAuth;
 
     private ToiletListPresenter toiletListPresenter;
 
     private RecyclerView toiletListView;
     private ToiletsAdapter toiletsAdapter;
+    private FloatingActionButton addToiletButton;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -45,30 +73,118 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
+        addToiletButton = (FloatingActionButton) view.findViewById(R.id.add_toilet_button);
+        addToiletButton.setOnClickListener(addToiletClickListener);
         toiletListView = (RecyclerView) view.findViewById(R.id.toilet_list);
         toiletListView.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
         toiletsAdapter = new ToiletsAdapter();
         toiletListView.setAdapter(toiletsAdapter);
     }
 
+    View.OnClickListener addToiletClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            toiletListPresenter.newToiletClicked();
+        }
+    };
+
+    private CallbackManager callbackManager;
+    private FirebaseAuth.AuthStateListener authStateListener;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
+        firebaseAuth = FirebaseAuth.getInstance();
+        FacebookSdk.sdkInitialize(getActivity().getApplicationContext());
         Location location = getArguments().getParcelable(EXTRA_LOCATION);
-        toiletListPresenter = new ToiletListPresenter(this, Injector.provideToiletRepository(), Injector.provideLocationRepository(getActivity()), Injector.provideDirectionRepository(getActivity()), location);
+        toiletListPresenter = new ToiletListPresenter(this
+                , Injector.provideToiletRepository()
+                , Injector.provideLocationRepository(getActivity())
+                , Injector.provideDirectionRepository(getActivity())
+                , Injector.provideFacebookRepository(), location);
+
+        callbackManager = CallbackManager.Factory.create();
+        LoginManager.getInstance().registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                Timber.d(TAG, "facebook:onSuccess:" + loginResult);
+                handleFacebookAccessToken(loginResult.getAccessToken());
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+
+        authStateListener = firebaseAuth -> {
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            if (user != null) {
+                // User is signed in
+                Timber.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+            } else {
+                // User is signed out
+                Timber.d(TAG, "onAuthStateChanged:signed_out");
+            }
+        };
+    }
+
+
+
+    private void handleFacebookAccessToken(AccessToken token) {
+        Timber.d(TAG, "handleFacebookAccessToken:" + token);
+
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        firebaseAuth.signInWithCredential(credential)
+                .addOnCompleteListener(getActivity(), task -> {
+                    Timber.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
+
+                    if (!task.isSuccessful()) {
+                        Timber.e(TAG, "signInWithCredential", task.getException());
+                        Toast.makeText(getActivity(), "Authentication failed.",
+                                Toast.LENGTH_SHORT).show();
+                    } else {
+                        FirebaseUser user = task.getResult().getUser();
+                    }
+                });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (callbackManager.onActivityResult(requestCode, resultCode, data)) {
+            return;
+        }
+    }
+
+    @Override
+    public void navigateToToiletCreation() {
+
+    }
+
+    @Override
+    public void navigateToFbAuth() {
+        LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile", "email"));
     }
 
     @Override
     public void onStart() {
         super.onStart();
         toiletListPresenter.start();
+        firebaseAuth.addAuthStateListener(authStateListener);
     }
 
     @Override
     public void onStop() {
         super.onStop();
         toiletListPresenter.stop();
+        firebaseAuth.removeAuthStateListener(authStateListener);
     }
 
     @Override
