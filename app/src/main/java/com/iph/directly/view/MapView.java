@@ -2,6 +2,7 @@ package com.iph.directly.view;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.iph.directly.domain.model.Location;
+import com.iph.directly.domain.model.Toilet;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ import java.util.List;
  */
 public interface MapView {
 
-    void showLocation(Location currentLocation);
+    void showLocation(LatLng currentLocation);
 
-    void showDirection(List<LatLng> latLngs);
+    void showDirection(List<LatLng> latLngs, Toilet toilet);
 }

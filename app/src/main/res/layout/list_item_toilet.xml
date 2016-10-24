@@ -30,14 +30,14 @@
 
         <TextView
             android:id="@+id/work_time"
-            style="@style/TextAppearance.AppCompat.SearchResult.Subtitle"
+            style="@style/TextAppearance.AppCompat.Caption"
             android:layout_gravity="center"
             android:layout_marginLeft="@dimen/toilet_list_price_margit_left"
             tools:text="Full day" />
 
         <TextView
             android:id="@+id/distance"
-            style="@style/TextAppearance.AppCompat.SearchResult.Title"
+            style="@style/TextAppearance.AppCompat.SearchResult.Subtitle"
             android:layout_gravity="right|center_vertical"
             android:layout_rowSpan="2"
             tools:text="250m" />
@@ -54,7 +54,7 @@
 
         <TextView
             android:id="@+id/price"
-            style="@style/TextAppearance.AppCompat.SearchResult.Subtitle"
+            style="@style/TextAppearance.AppCompat.Caption"
             android:layout_width="wrap_content"
             android:layout_gravity="left"
             android:layout_marginLeft="@dimen/toilet_list_price_margit_left"

@@ -23,7 +23,9 @@ import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.functions.Func2;
 import rx.schedulers.Schedulers;
+import timber.log.Timber;
 
 /**
  * Created by vanya on 10/8/2016.
@@ -45,24 +47,28 @@ public class LocationRepositoryImpl implements LocationRepository {
                 && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return Observable.error(new SecurityException("No location permission granted"));
         }
-        return locationProvider.getUpdatedLocation(LocationRequest.create().setInterval(200).setNumUpdates(1)).flatMap(locations ->
-                locationProvider.getReverseGeocodeObservable(locations.getLatitude(), locations.getLongitude(), 1))
-                .flatMap(addresses -> {
-                    Location location = new Location(addresses.get(0).getLatitude(), addresses.get(0).getLongitude(), addresses.get(0).getLocality(), addresses.get(0).getCountryName());
-                    return Observable.just(location);
+        return locationProvider.getUpdatedLocation(LocationRequest.create().setInterval(200).setNumUpdates(1))
+                .doOnNext(location -> {
+                    Timber.d("Location", location.toString());
+                })
+                .flatMap(locations -> locationProvider.getReverseGeocodeObservable(locations.getLatitude(), locations.getLongitude(), 1), (location, addresses) -> {
+                    Location myLocation = new Location(location.getLatitude(), location.getLongitude(), addresses.get(0).getLocality(), addresses.get(0).getCountryName());
+                    return myLocation;
                 });
     }
 
     @Override
     public Observable<Toilet> initPlaceId(Location currentLocation, Toilet toilet) {
-        return locationProvider.getPlaceAutocompletePredictions(toilet.getCity() + ", " + toilet.getAddress(), null, null)
-                .filter(autocompletePredictions -> autocompletePredictions.getCount() != 0)
+        String requestString = (toilet.getCity() + ", " + toilet.getAddress()).replace(", б/н", "");
+        return locationProvider.getPlaceAutocompletePredictions(requestString, null, null)
                 .map(autocompletePredictions -> {
                     String placeId = null;
                     for (AutocompletePrediction prediction: autocompletePredictions) {
                         if (prediction.getSecondaryText(null).toString().contains(toilet.getCity() + ",")) {
                             placeId = prediction.getPlaceId();
                             break;
+                        } else {
+                            Timber.e("Location prediction", prediction);
                         }
                     }
                     toilet.setPlaceId(placeId);

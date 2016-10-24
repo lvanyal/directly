@@ -1,6 +1,7 @@
 package com.iph.directly.presenter;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.PolyUtil;
 import com.iph.directly.domain.DirectionRepository;
 import com.iph.directly.domain.apimodel.RouteResponse;
 import com.iph.directly.domain.model.Location;
@@ -22,23 +23,26 @@ public class MapPresenter {
     private DirectionRepository directionRepository;
     private Location currentLocation;
     private Subscription currentSubscription;
+    private Toilet toilet;
+
+    private static final LatLng KYIV_LAT_LNG = new LatLng(50.449549, 30.522830);
 
     public MapPresenter(MapView mapView, DirectionRepository directionRepository) {
         this.mapView = mapView;
         this.directionRepository = directionRepository;
     }
 
-    public void mapReady(Location currentLocation) {
+    public void mapReady(Location currentLocation, Toilet toilet) {
         this.currentLocation = currentLocation;
-        mapView.showLocation(currentLocation);
+        this.toilet = toilet;
+        mapView.showLocation(currentLocation != null && currentLocation.getLatLng() != null ? currentLocation.getLatLng() : KYIV_LAT_LNG);
+        loadDirection();
     }
 
-    public void toiletChosen(Toilet toilet) {
-        currentSubscription = directionRepository.getDirectionToToilet(currentLocation, toilet).subscribe(new Action1<RouteResponse>() {
-            @Override
-            public void call(RouteResponse routeResponse) {
-                //// TODO: 10/20/2016 show route
-            }
+    private void loadDirection() {
+        currentSubscription = directionRepository.getDirectionToToilet(currentLocation, toilet).subscribe(routeResponse -> {
+            List<LatLng> latLngs = PolyUtil.decode(routeResponse.getPoints());
+            mapView.showDirection(latLngs, toilet);
         }, throwable -> {
             Timber.e(throwable.getMessage(), throwable);
         });
