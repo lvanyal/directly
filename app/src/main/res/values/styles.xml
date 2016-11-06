@@ -7,6 +7,8 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:background">@color/backgroundColor</item>
+        <item name="android:textColorPrimary">@color/textColorPrimary</item>
+        <item name="android:textColorSecondary">@color/textColorSecondary</item>
     </style>
 
     <style name="AppTheme.NoActionBar">
@@ -14,8 +16,20 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Toolbar" parent="@style/Widget.AppCompat.Light.ActionBar">
+        <item name="android:titleTextStyle">@style/Toolbar.Title</item>
+        <item name="android:subtitleTextStyle">@style/Toolbar.Title</item>
+        <item name="android:actionBarItemBackground">@null</item>
+        <item name="android:colorControlNormal">#fff</item>
+        <item name="colorControlNormal">#fff</item>
+        <item name="android:titleTextColor">#fff</item>
+        <item name="titleTextColor">#fff</item>
+        <item name="android:background">@null</item>
+        <item name="background">@null</item>
+    </style>
 
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="Toolbar.Title" parent="Base.TextAppearance.AppCompat.Title">
+        <item name="android:textColor">@color/textColorPrimaryInverse</item>
+    </style>
 
 </resources>

@@ -13,4 +13,5 @@ import rx.Observable;
 public interface LocationRepository {
     Observable<Location> getCurrentLocation();
     Observable<Toilet> initPlaceId(Location currentLocation, Toilet toilet);
+    Observable<String> getCurrentLocationText();
 }

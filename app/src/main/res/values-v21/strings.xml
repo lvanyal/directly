@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="empty_end_time">Empty end time</string>
+    <string name="empty_name">Empty toilet name</string>
+</resources>

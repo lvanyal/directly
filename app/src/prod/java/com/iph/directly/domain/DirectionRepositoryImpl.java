@@ -39,7 +39,7 @@ public class DirectionRepositoryImpl implements DirectionRepository {
     public Observable<RouteResponse> getDirectionToToilet(Location currentLocation, Toilet toilet) {
         LatLng currentLatLng = currentLocation.getLatLng();
         return directionApi
-                .getRoute(currentLatLng.latitude + "," + currentLatLng.longitude, "place_id:" + toilet.getPlaceId(), true, "walking", "en", directionApiKey)
+                .getRoute(currentLatLng.latitude + "," + currentLatLng.longitude, toilet.getLatitude() + "," + toilet.getLongitude(), true, "walking", "en", directionApiKey)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread());
     }
@@ -47,7 +47,7 @@ public class DirectionRepositoryImpl implements DirectionRepository {
     @Override
     public Observable<Toilet> initDistanceToToilet(Location currentLocation, Toilet toilet) {
         return directionApi
-                .getRoute(currentLocation.getLatLng().latitude + "," + currentLocation.getLatLng().longitude, "place_id:" + toilet.getPlaceId(), true, "walking", "en", directionApiKey)
+                .getRoute(currentLocation.getLatLng().latitude + "," + currentLocation.getLatLng().longitude, toilet.getLatitude() + "," + toilet.getLongitude(), true, "walking", "en", directionApiKey)
                 .map(routeResponse -> {
                     toilet.setDistance(routeResponse.getDistance());
                     return toilet;

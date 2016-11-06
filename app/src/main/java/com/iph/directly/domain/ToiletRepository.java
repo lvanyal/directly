@@ -13,4 +13,6 @@ import rx.Observable;
 
 public interface ToiletRepository {
     Observable<List<Toilet>> getToilets(Location location);
+
+    Observable<Toilet> saveToilet(Toilet toilet);
 }

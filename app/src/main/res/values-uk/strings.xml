@@ -2,6 +2,33 @@
 <resources>
     <string name="app_name">Навпростець</string>
     <string name="uah">грн</string>
-    <string name="km">km</string>
-    <string name="meters">m</string>
+    <string name="km">км</string>
+    <string name="meters">м</string>
+    <string name="address">Адреса</string>
+    <string name="is_full_day">Цілодобовий</string>
+    <string name="end_time">Кінець</string>
+    <string name="start_time">Початок роботи</string>
+    <string name="organization">Організація (не обов\'язково)</string>
+    <string name="just_toilet">Просто туалет</string>
+    <string name="create_toilet">Створити туалет</string>
+    <string name="add_toilet_title">Додати туалет</string>
+    <string name="empty_address">Empty address</string>
+    <string name="wait_location">Почекайте поки локація підтягнеться</string>
+    <string name="empty_start_time">Порожній час початку роботи</string>
+    <string name="error">Помилка</string>
+    <string name="menu_item_login">Логін</string>
+    <string name="menu_item_logout">Розлогінитись</string>
+    <string name="sort">Sort</string>
+    <string name="menu_distance">Відстань</string>
+    <string name="menu_price">Ціна</string>
+    <string name="menu_time">Час</string>
+    <string name="empty_name">Порожня назва туалета</string>
+    <string name="empty_end_time">Порожній час кінця роботи</string>
+    <string name="strike">Скарга</string>
+    <string name="unstrike">Забрати скаргу</string>
+    <string name="menu_feedback">Відгук</string>
+    <string name="your_feedback_is_very_important">Ваш фідбек дуже важливий для нас</string>
+    <string name="leave_your_feedback">Leave your feedback</string>
+    <string name="app_is_normal">Додаток чудовий</string>
+    <string name="there_no_toilets_added_for_your_city_you_can_fix_it_by_adding_toilet_by_yourself">Нема туалетів в твоєму місті. Можеш виправити це, додавши знайомий туалет кнопкою знизу.</string>
 </resources>

@@ -63,7 +63,7 @@ public class LoadingFragment extends Fragment implements LoadingView {
         fragment.setArguments(bundle);
         getFragmentManager().
                 beginTransaction()
-                .replace(R.id.container, fragment)
+                .replace(R.id.container, fragment, ToiletListFragment.TAG)
                 .commit();
     }
 

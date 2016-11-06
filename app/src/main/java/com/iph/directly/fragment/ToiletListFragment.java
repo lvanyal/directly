@@ -1,52 +1,46 @@
 package com.iph.directly.fragment;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.InputType;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.directly.iph.directly.R;
-import com.facebook.AccessToken;
-import com.facebook.CallbackManager;
-import com.facebook.FacebookCallback;
-import com.facebook.FacebookException;
-import com.facebook.FacebookSdk;
-import com.facebook.login.LoginManager;
-import com.facebook.login.LoginResult;
-import com.google.android.gms.common.SignInButton;
-import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FacebookAuthProvider;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.iph.directly.domain.FacebookRepository;
 import com.iph.directly.domain.Injector;
+import com.iph.directly.domain.auth.Authorizer;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.presenter.ToiletListPresenter;
 import com.iph.directly.view.ToiletListView;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executor;
 
-import timber.log.Timber;
+import rx.Observable;
+import rx.functions.Action1;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -55,15 +49,39 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
 
     public static final String EXTRA_LOCATION = "extra_location";
     public static final String MAP_TAG = "mapTag";
-    private static final String TAG = ToiletListFragment.class.getName();
+    public static final String NEW_TOILET_TAG = "newToilet";
+    public static final String TAG = ToiletListFragment.class.getName();
+    public static final String EXTRA_NEW_TOILET = "extra_new_toilet";
 
-    private FirebaseAuth firebaseAuth;
+    private SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm");
+
+    private Comparator<Toilet> DISTANCE_COMPARATOR = (toilet1, toilet2) -> {
+        if (toilet2.getDistance() == 0) {
+            return -1;
+        } else if (toilet1.getDistance() == 0) {
+            return 1;
+        } else {
+            return toilet1.getDistance() - toilet2.getDistance();
+        }
+    };
+
+    private Comparator<Toilet> PRICE_COMPARATOR = (toilet1, toilet2) -> Float.compare(toilet1.getPrice(), toilet2.getPrice());
+
+    private Comparator<Toilet> TIME_COMPARATOR = (toilet1, toilet2) -> {
+        return (int) (toilet1.getStartTime() - toilet2.getStartTime());
+    };
+
+    private boolean isSignedIn;
 
     private ToiletListPresenter toiletListPresenter;
 
     private RecyclerView toiletListView;
     private ToiletsAdapter toiletsAdapter;
     private FloatingActionButton addToiletButton;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private View emptyView;
+
+    private Authorizer authorizer;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -73,8 +91,12 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
+        ((AppCompatActivity) getActivity()).setSupportActionBar((android.support.v7.widget.Toolbar) view.findViewById(R.id.toolbar));
         addToiletButton = (FloatingActionButton) view.findViewById(R.id.add_toilet_button);
         addToiletButton.setOnClickListener(addToiletClickListener);
+        emptyView = view.findViewById(R.id.empty_view);
+        swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_to_refresh);
+        swipeRefreshLayout.setOnRefreshListener(() -> toiletListPresenter.refresh());
         toiletListView = (RecyclerView) view.findViewById(R.id.toilet_list);
         toiletListView.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
         toiletsAdapter = new ToiletsAdapter();
@@ -88,103 +110,139 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
         }
     };
 
-    private CallbackManager callbackManager;
-    private FirebaseAuth.AuthStateListener authStateListener;
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_main, menu);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        firebaseAuth = FirebaseAuth.getInstance();
-        FacebookSdk.sdkInitialize(getActivity().getApplicationContext());
+        setHasOptionsMenu(true);
+        authorizer = new Authorizer(this, () -> toiletListPresenter.onUserSingedIn());
+
         Location location = getArguments().getParcelable(EXTRA_LOCATION);
         toiletListPresenter = new ToiletListPresenter(this
-                , Injector.provideToiletRepository()
+                , Injector.provideToiletRepository(getActivity())
                 , Injector.provideLocationRepository(getActivity())
                 , Injector.provideDirectionRepository(getActivity())
-                , Injector.provideFacebookRepository(), location);
-
-        callbackManager = CallbackManager.Factory.create();
-        LoginManager.getInstance().registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-                Timber.d(TAG, "facebook:onSuccess:" + loginResult);
-                handleFacebookAccessToken(loginResult.getAccessToken());
-            }
-
-            @Override
-            public void onCancel() {
-
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-
-            }
-        });
-
-        authStateListener = firebaseAuth -> {
-            FirebaseUser user = firebaseAuth.getCurrentUser();
-            if (user != null) {
-                // User is signed in
-                Timber.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-            } else {
-                // User is signed out
-                Timber.d(TAG, "onAuthStateChanged:signed_out");
-            }
-        };
+                , authorizer
+                , Injector.provideStrikeRepository()
+                , Injector.provideFeedbackRepository()
+                , Injector.provideDeviceInfo(getActivity())
+                , location);
     }
 
-
-
-    private void handleFacebookAccessToken(AccessToken token) {
-        Timber.d(TAG, "handleFacebookAccessToken:" + token);
-
-        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
-        firebaseAuth.signInWithCredential(credential)
-                .addOnCompleteListener(getActivity(), task -> {
-                    Timber.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
-
-                    if (!task.isSuccessful()) {
-                        Timber.e(TAG, "signInWithCredential", task.getException());
-                        Toast.makeText(getActivity(), "Authentication failed.",
-                                Toast.LENGTH_SHORT).show();
-                    } else {
-                        FirebaseUser user = task.getResult().getUser();
-                    }
-                });
-    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (callbackManager.onActivityResult(requestCode, resultCode, data)) {
-            return;
-        }
+        authorizer.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
     public void navigateToToiletCreation() {
+        NewToiletFragment fragment;
+        if (getActivity().getSupportFragmentManager().findFragmentByTag(NEW_TOILET_TAG) == null) {
+            fragment = new NewToiletFragment();
+            getFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.container, fragment, NEW_TOILET_TAG)
+                    .addToBackStack(NEW_TOILET_TAG)
+                    .commit();
+        } else {
+            fragment = (NewToiletFragment) getActivity().getSupportFragmentManager().findFragmentByTag(NEW_TOILET_TAG);
+            getFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.container, fragment, NEW_TOILET_TAG)
+                    .addToBackStack(NEW_TOILET_TAG)
+                    .commit();
+        }
+    }
+
+    @Override
+    public void updateSignInStatus(boolean isSignedIn) {
+        this.isSignedIn = isSignedIn;
+        getActivity().invalidateOptionsMenu();
+    }
+
+    @Override
+    public void showToiletMenu(Toilet toilet, ToiletMenuItem... toiletMenuItems) {
+        Observable.from(toiletMenuItems)
+                .map(toiletMenuItem -> (CharSequence) getString(toiletMenuItem.resId))
+                .toList()
+                .subscribe(text -> {
+                            new MaterialDialog.Builder(getActivity())
+                                    .items(text.toArray(new CharSequence[0]))
+                                    .itemsCallback((dialog, itemView, position, text1) ->
+                                            toiletListPresenter.toiletMenuItemChosen(toilet, toiletMenuItems[position]))
+                                    .show();
+                        }
+                );
 
     }
 
     @Override
-    public void navigateToFbAuth() {
-        LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile", "email"));
+    public void onPrepareOptionsMenu(Menu menu) {
+        MenuItem loginLogoutItem = menu.findItem(R.id.login_logout);
+        loginLogoutItem.setTitle(isSignedIn ? R.string.menu_item_logout : R.string.menu_item_login);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.login_logout:
+                toiletListPresenter.loginLogoutPressed();
+                return true;
+            case R.id.feedback:
+                toiletListPresenter.feedbackPressed();
+                return true;
+            case R.id.distance:
+                Collections.sort(toiletsAdapter.toilets, DISTANCE_COMPARATOR);
+                toiletsAdapter.notifyDataSetChanged();
+                return true;
+            case R.id.price:
+                Collections.sort(toiletsAdapter.toilets, PRICE_COMPARATOR);
+                toiletsAdapter.notifyDataSetChanged();
+                return true;
+            case R.id.time:
+                Collections.sort(toiletsAdapter.toilets, TIME_COMPARATOR);
+                toiletsAdapter.notifyDataSetChanged();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    public void showFeedbackForm() {
+        new MaterialDialog.Builder(getActivity())
+                .title(R.string.your_feedback_is_very_important)
+                .inputType(InputType.TYPE_CLASS_TEXT)
+                .input(getString(R.string.leave_your_feedback), getString(R.string.app_is_normal), (dialog, input) -> {
+                    toiletListPresenter.feedbackLeaved(input);
+                }).show();
+
+    }
+
+    @Override
+    public void navigateToAuth() {
+        authorizer.signIn();
     }
 
     @Override
     public void onStart() {
         super.onStart();
         toiletListPresenter.start();
-        firebaseAuth.addAuthStateListener(authStateListener);
+        authorizer.start();
     }
 
     @Override
     public void onStop() {
         super.onStop();
         toiletListPresenter.stop();
-        firebaseAuth.removeAuthStateListener(authStateListener);
+        authorizer.stop();
     }
 
     @Override
@@ -195,22 +253,22 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
 
     @Override
     public void showProgress() {
-
+        swipeRefreshLayout.setRefreshing(true);
     }
 
     @Override
     public void hideProgress() {
-
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     @Override
     public void showEmptyView() {
-
+        emptyView.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void hideEmptyView() {
-
+        emptyView.setVisibility(View.GONE);
     }
 
     @Override
@@ -263,7 +321,14 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
 
     @Override
     public void navigateToMapsApp(Toilet toilet) {
-        Uri gmmIntentUri = Uri.parse(String.format(Locale.getDefault(), "geo:0,0?q=%s+%s", toilet.getCity(), toilet.getAddress()));
+        Uri gmmIntentUri;
+        if (toilet.getLatitude() != 0) {
+            gmmIntentUri = Uri.parse(String.format(Locale.getDefault(), "http://maps.google.com/maps?daddr=%s,%s&mode=walking", toilet.getLatitude(), toilet.getLongitude()));
+        } else if (toilet.getPlaceId() != null) {
+            gmmIntentUri = Uri.parse(String.format(Locale.getDefault(), "http://maps.google.com/maps?dplace_id=%s&mode=walking", toilet.getPlaceId()));
+        } else {
+            gmmIntentUri = Uri.parse(String.format(Locale.getDefault(), "geo:0,0?q=%s+%s&mode=walking", toilet.getCity(), toilet.getAddress()));
+        }
         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
         mapIntent.setPackage("com.google.android.apps.maps");
         startActivity(mapIntent);
@@ -289,11 +354,18 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
             holder.toiletName.setText(toilet.getName());
             holder.price.setText(String.format(Locale.getDefault(), "%.2f %s", toilet.getPrice(), getString(R.string.uah)));
             holder.address.setText(toilet.getAddress());
-            holder.workTime.setText(String.format(Locale.getDefault(), "%s-%s", toilet.getStartTime(), toilet.getEndTime()));
+            String startTime = timeFormatter.format(new Date(toilet.getStartTime()));
+            String endTime = timeFormatter.format(new Date(toilet.getEndTime()));
+            holder.workTime.setText(String.format(Locale.getDefault(), "%s-%s", startTime, endTime));
             holder.distance.setText(getFormattedDistance(toilet.getDistance()));
 
             holder.itemView.setOnClickListener(v -> {
                 toiletListPresenter.toiletChoose(toilet);
+            });
+
+            holder.itemView.setOnLongClickListener(view -> {
+                toiletListPresenter.toiletContextMenuOpen(toilet);
+                return true;
             });
         }
 

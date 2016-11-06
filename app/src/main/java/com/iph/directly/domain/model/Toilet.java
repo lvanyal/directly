@@ -3,16 +3,18 @@ package com.iph.directly.domain.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.firebase.database.Exclude;
 import com.google.gson.annotations.Expose;
-
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
  * Created by vanya on 10/8/2016.
  */
 
 public class Toilet implements Parcelable {
+
+    @Expose
+    private String id;
+
     @Expose
     private String name;
 
@@ -20,10 +22,10 @@ public class Toilet implements Parcelable {
     private float price;
 
     @Expose
-    private String startTime;
+    private long startTime;
 
     @Expose
-    private String endTime;
+    private long endTime;
 
     @Expose
     private String address;
@@ -31,12 +33,21 @@ public class Toilet implements Parcelable {
     @Expose
     private boolean is24h;
 
+    @Exclude
     @Expose
     private String placeId;
 
     @Expose
     private String city;
 
+    @Expose
+    private double latitude;
+
+    @Expose
+    private double longitude;
+
+    @Expose
+    @Exclude
     private int distance;
 
     public Toilet() {
@@ -45,12 +56,14 @@ public class Toilet implements Parcelable {
     protected Toilet(Parcel in) {
         name = in.readString();
         price = in.readFloat();
-        startTime = in.readString();
-        endTime = in.readString();
+        startTime = in.readLong();
+        endTime = in.readLong();
         address = in.readString();
         is24h = in.readByte() != 0;
         placeId = in.readString();
         city = in.readString();
+        latitude = in.readDouble();
+        longitude = in.readDouble();
     }
 
     public static final Creator<Toilet> CREATOR = new Creator<Toilet>() {
@@ -81,19 +94,19 @@ public class Toilet implements Parcelable {
         this.price = price;
     }
 
-    public String getStartTime() {
+    public long getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(String startTime) {
+    public void setStartTime(long startTime) {
         this.startTime = startTime;
     }
 
-    public String getEndTime() {
+    public long getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(String endTime) {
+    public void setEndTime(long endTime) {
         this.endTime = endTime;
     }
 
@@ -121,6 +134,7 @@ public class Toilet implements Parcelable {
         this.placeId = placeId;
     }
 
+    @Exclude
     public int getDistance() {
         return distance;
     }
@@ -137,34 +151,49 @@ public class Toilet implements Parcelable {
         this.city = city;
     }
 
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-
         if (!(o instanceof Toilet)) return false;
 
         Toilet toilet = (Toilet) o;
 
-        return new EqualsBuilder()
-                .append(price, toilet.price)
-                .append(is24h, toilet.is24h)
-                .append(name, toilet.name)
-                .append(startTime, toilet.startTime)
-                .append(endTime, toilet.endTime)
-                .append(address, toilet.address)
-                .isEquals();
+        if (Float.compare(toilet.price, price) != 0) return false;
+        if (startTime != toilet.startTime) return false;
+        if (endTime != toilet.endTime) return false;
+        if (is24h != toilet.is24h) return false;
+        if (!name.equals(toilet.name)) return false;
+        if (!address.equals(toilet.address)) return false;
+        return city.equals(toilet.city);
+
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(name)
-                .append(price)
-                .append(startTime)
-                .append(endTime)
-                .append(address)
-                .append(is24h)
-                .toHashCode();
+        int result = name.hashCode();
+        result = 31 * result + (price != +0.0f ? Float.floatToIntBits(price) : 0);
+        result = 31 * result + (int) (startTime ^ (startTime >>> 32));
+        result = 31 * result + (int) (endTime ^ (endTime >>> 32));
+        result = 31 * result + address.hashCode();
+        result = 31 * result + (is24h ? 1 : 0);
+        result = 31 * result + city.hashCode();
+        return Math.abs(result);
     }
 
     @Override
@@ -176,11 +205,25 @@ public class Toilet implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(name);
         dest.writeFloat(price);
-        dest.writeString(startTime);
-        dest.writeString(endTime);
+        dest.writeLong(startTime);
+        dest.writeLong(endTime);
         dest.writeString(address);
         dest.writeByte((byte) (is24h ? 1 : 0));
         dest.writeString(placeId);
         dest.writeString(city);
+        dest.writeDouble(latitude);
+        dest.writeDouble(longitude);
+    }
+
+    public boolean hasId() {
+        return id != null;
+    }
+
+    public void generateId() {
+        this.id = String.valueOf(hashCode());
+    }
+
+    public String getId() {
+        return id;
     }
 }

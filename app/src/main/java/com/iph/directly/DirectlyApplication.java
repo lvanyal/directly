@@ -3,8 +3,10 @@ package com.iph.directly;
 import android.app.Application;
 import android.content.Context;
 
+import com.crashlytics.android.Crashlytics;
 import com.directly.iph.directly.BuildConfig;
 
+import io.fabric.sdk.android.Fabric;
 import timber.log.Timber;
 
 /**
@@ -13,11 +15,10 @@ import timber.log.Timber;
 
 public class DirectlyApplication extends Application {
 
-    private static Application application;
-
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
 
         if (BuildConfig.DEBUG) {
             Timber.plant(new Timber.DebugTree());

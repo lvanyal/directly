@@ -1,16 +1,30 @@
 apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'io.fabric'
+
+repositories {
+    maven { url 'https://maven.fabric.io/public' }
+}
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.0"
+    signingConfigs {
+        config {
+            keyAlias 'directly'
+            keyPassword 'gtxtymrj'
+            storeFile file('E:/trash/directly.jks')
+            storePassword 'gtxtymrj'
+        }
+    }
+    compileSdkVersion 25
+    buildToolsVersion "25.0.0"
     defaultConfig {
         applicationId "com.iph.directly"
         minSdkVersion 15
-        targetSdkVersion 24
+        targetSdkVersion 25
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -20,9 +34,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
         }
     }
-
     productFlavors {
         mock {
 
@@ -32,7 +46,6 @@ android {
 
         }
     }
-
     testOptions {
         unitTests.returnDefaultValues = true
     }
@@ -43,35 +56,31 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:24.2.1'
-    compile 'com.android.support:design:24.2.1'
-
+    compile 'com.android.support:appcompat-v7:25.0.0'
+    compile 'com.android.support:design:25.0.0'
     compile 'io.reactivex:rxandroid:1.2.1'
     compile 'io.reactivex:rxjava:1.1.6'
-
     compile 'com.squareup.retrofit2:retrofit:2.0.2'
     compile 'com.squareup.retrofit2:adapter-rxjava:2.0.2'
     compile 'com.squareup.retrofit2:converter-gson:2.0.2'
     compile 'com.squareup.okhttp3:logging-interceptor:3.3.1'
-
     compile 'pl.charmas.android:android-reactive-location:0.10@aar'
-
-    compile 'com.google.android.gms:play-services-location:9.6.1'
+    compile 'com.google.android.gms:play-services-location:9.8.0'
     compile 'com.google.maps.android:android-maps-utils:0.4'
-    compile 'com.google.android.gms:play-services-places:9.6.1'
-    compile 'com.android.support:cardview-v7:24.2.1'
-    compile 'com.android.support:recyclerview-v7:24.2.1'
-
-    compile 'com.google.firebase:firebase-auth:9.6.1'
-    compile 'com.google.firebase:firebase-database:9.6.1'
-
+    compile 'com.google.android.gms:play-services-places:9.8.0'
+    compile 'com.android.support:cardview-v7:25.0.0'
+    compile 'com.android.support:recyclerview-v7:25.0.0'
+    compile 'com.google.firebase:firebase-auth:9.8.0'
+    compile 'com.google.firebase:firebase-database:9.8.0'
     compile 'com.jakewharton.timber:timber:3.1.0'
-
-    compile 'com.facebook.android:facebook-android-sdk:4.+'
-    compile group: 'com.google.code.gson', name: 'gson', version: '2.7'
-
-    compile 'com.opencsv:opencsv:3.8'
-
+    compile 'com.facebook.android:facebook-android-sdk:4.16.1'
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-beta1'
+    compile 'com.wdullaer:materialdatetimepicker:2.5.0'
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.5@aar') {
+        transitive = true;
+    }
+    compile 'com.afollestad.material-dialogs:core:0.9.0.2'
+    compile 'com.univocity:univocity-parsers:2.2.3'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.10.19'
 }

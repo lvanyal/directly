@@ -2,5 +2,58 @@
     <string name="app_name">Directly</string>
     <string name="uah">uah</string>
     <string name="km">km</string>
-    <string name="meters">m</string>
+    <string name="meters" >m</string>
+    <string name="address">Address</string>
+    <string name="is_full_day">Is Full day</string>
+    <string-array name="prices" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+        <item>17</item>
+        <item>18</item>
+        <item>19</item>
+        <item>20</item>
+    </string-array>
+
+    <string name="start_time">Start time</string>
+    <string name="end_time">End time</string>
+    <string name="organization">Organization</string>
+    <string name="just_toilet">Just Toilet</string>
+    <string name="create_toilet">Create Toilet</string>
+    <string name="add_toilet_title">Add toilet</string>
+    <string name="empty_address">Empty address</string>
+    <string name="wait_location">Wait until retrieve location</string>
+    <string name="empty_start_time">Empty start time</string>
+    <string name="empty_end_time">Empty end time</string>
+    <string name="empty_name">Empty toilet name</string>
+    <string name="error">Error</string>
+    <string name="menu_item_login">Login</string>
+    <string name="menu_item_logout">Logout</string>
+    <string name="sort">Sort</string>
+    <string name="menu_distance">Distance</string>
+    <string name="menu_price">Price</string>
+    <string name="menu_time">Time</string>
+
+    <string name="strike">Strike</string>
+    <string name="unstrike">Unstrike</string>
+    <string name="menu_feedback">Feedback</string>
+    <string name="your_feedback_is_very_important">Your feedback is very important</string>
+    <string name="leave_your_feedback">Leave your feedback</string>
+    <string name="app_is_normal">The app is great</string>
+    <string name="there_no_toilets_added_for_your_city_you_can_fix_it_by_adding_toilet_by_yourself">There no toilets added for your city. You can fix it by adding toilet by yourself.</string>
+
 </resources>

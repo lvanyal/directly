@@ -7,5 +7,14 @@
     <color name="backgroundColor">#fff</color>
     <color name="highLightColor">#efefef</color>
 
+    <color name="textColorPrimary">#de000000</color>
+    <color name="textColorSecondary">#8a000000</color>
+
+    <color name="textColorPrimaryInverse">#fff</color>
+    <color name="textColorSecondaryInverse">#8affffff</color>
+
     <color name="mapRouteColor">#d2420d59</color>
+
+    <color name="mdtp_calendar_header">@color/colorAccent</color>
+
 </resources>

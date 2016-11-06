@@ -1,16 +1,19 @@
 package com.iph.directly.presenter;
 
-import android.text.TextUtils;
-
+import com.iph.directly.domain.DeviceInfo;
 import com.iph.directly.domain.DirectionRepository;
-import com.iph.directly.domain.FacebookRepository;
+import com.iph.directly.domain.AuthRepository;
+import com.iph.directly.domain.FeedbackRepository;
 import com.iph.directly.domain.LocationRepository;
+import com.iph.directly.domain.StrikeRepository;
 import com.iph.directly.domain.ToiletRepository;
 import com.iph.directly.domain.model.Location;
+import com.iph.directly.domain.model.Strike;
 import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.view.ToiletListView;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,7 +32,9 @@ public class ToiletListPresenter {
     private ToiletListView toiletListView;
     private ToiletRepository toiletRepository;
     private LocationRepository locationRepository;
-    private FacebookRepository facebookRepository;
+    private AuthRepository authRepository;
+    private StrikeRepository strikeRepository;
+    private FeedbackRepository feedbackRepository;
 
     private Location location;
 
@@ -37,46 +42,60 @@ public class ToiletListPresenter {
     private Subscription currentLocationSubscription;
     private List<Toilet> toilets = new ArrayList<>();
 
+    private DeviceInfo deviceInfo;
+
     public ToiletListPresenter(ToiletListView toiletListView
             , ToiletRepository toiletRepository
             , LocationRepository locationRepository
             , DirectionRepository directionRepository
-            , FacebookRepository facebookRepository
+            , AuthRepository authRepository
+            , StrikeRepository strikeRepository
+            , FeedbackRepository feedbackRepository
+            , DeviceInfo deviceInfo
             , Location location) {
         this.toiletListView = toiletListView;
         this.toiletRepository = toiletRepository;
         this.locationRepository = locationRepository;
         this.location = location;
         this.directionRepository = directionRepository;
-        this.facebookRepository = facebookRepository;
+        this.authRepository = authRepository;
+        this.strikeRepository = strikeRepository;
+        this.feedbackRepository = feedbackRepository;
+        this.deviceInfo = deviceInfo;
     }
 
     public void start() {
-        toiletListView.showProgress();
         if (toilets.isEmpty()) {
-            currentToiletSubscription = toiletRepository.getToilets(location).subscribe(toilets -> {
-                toiletListView.hideProgress();
-                if (toilets == null || toilets.isEmpty()) {
-                    toiletListView.showEmptyView();
-                } else {
-                    this.toilets = toilets;
-                    toiletListView.showToiletList(toilets);
-
-                    loadDistances();
-                }
-            }, throwable -> {
-                toiletListView.hideProgress();
-                Timber.e(throwable.getMessage(), throwable);
-            });
+            loadToilets();
         } else {
             toiletListView.showToiletList(toilets);
         }
+        toiletListView.updateSignInStatus(authRepository.isSignedIn());
+    }
+
+    private void loadToilets() {
+        currentToiletSubscription = toiletRepository.getToilets(location)
+                .doOnSubscribe(() -> toiletListView.showProgress())
+                .subscribe(toilets -> {
+                    toiletListView.hideProgress();
+                    if (toilets == null || toilets.isEmpty()) {
+                        toiletListView.showEmptyView();
+                    } else {
+                        this.toilets = toilets;
+                        toiletListView.showToiletList(toilets);
+                        loadDistances();
+                    }
+                }, throwable -> {
+                    toiletListView.hideProgress();
+                    Timber.e(throwable.getMessage(), throwable);
+                });
     }
 
     private void loadDistances() {
         currentLocationSubscription = Observable.from(toilets)
                 .flatMap(toilet -> locationRepository.initPlaceId(location, toilet))
-                .flatMap(toilet -> toilet.getPlaceId() != null ? directionRepository.initDistanceToToilet(ToiletListPresenter.this.location, toilet) : Observable.just(toilet))
+                .flatMap(toilet ->
+                        toilet.getPlaceId() != null || toilet.getLatitude() != 0 ? directionRepository.initDistanceToToilet(ToiletListPresenter.this.location, toilet) : Observable.just(toilet))
                 .toList()
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -110,7 +129,7 @@ public class ToiletListPresenter {
     }
 
     public void toiletChoose(Toilet toilet) {
-        if (TextUtils.isEmpty(toilet.getPlaceId())) {
+        if (deviceInfo.isMapAppAvailable()) {
             toiletListView.navigateToMapsApp(toilet);
         } else {
             toiletListView.navigateToDirection(toilet, location);
@@ -118,10 +137,92 @@ public class ToiletListPresenter {
     }
 
     public void newToiletClicked() {
-        if (facebookRepository.isSignedIn()) {
+        if (authRepository.isSignedIn()) {
             toiletListView.navigateToToiletCreation();
         } else {
-            toiletListView.navigateToFbAuth();
+            toiletListView.navigateToAuth();
+        }
+    }
+
+    public void onUserSingedIn() {
+        toiletListView.navigateToToiletCreation();
+    }
+
+    public void loginLogoutPressed() {
+        if (authRepository.isSignedIn()) {
+            authRepository.signOut();
+            toiletListView.updateSignInStatus(false);
+        } else {
+            toiletListView.navigateToAuth();
+        }
+    }
+
+    public void toiletContextMenuOpen(Toilet toilet) {
+        if (authRepository.isSignedIn()) {
+            toiletListView.showProgress();
+            if (!toilet.hasId()) {
+                toilet.generateId();
+            }
+            strikeRepository.isToiletStrikedByUser(toilet.getId(), authRepository.getUserId()).subscribe(alreadyStriked -> {
+                        if (alreadyStriked) {
+                            toiletListView.showToiletMenu(toilet, ToiletListView.ToiletMenuItem.UNSTRIKE);
+                        } else {
+                            toiletListView.showToiletMenu(toilet, ToiletListView.ToiletMenuItem.STRIKE);
+                        }
+                    }, throwable -> toiletListView.hideProgress()
+            );
+        } else {
+            toiletListView.navigateToAuth();
+        }
+    }
+
+    public void toiletMenuItemChosen(Toilet toilet, ToiletListView.ToiletMenuItem toiletMenuItem) {
+        switch (toiletMenuItem) {
+            case STRIKE:
+                strikeRepository.putStrike(toilet.getId(), authRepository.getUserId())
+                        .doOnSubscribe(() -> toiletListView.showProgress())
+                        .subscribe(strike -> {
+                                    toiletListView.hideProgress();
+                                }
+                                , throwable -> toiletListView.hideProgress());
+                break;
+            case UNSTRIKE:
+                strikeRepository.removeStrike(toilet.getId(), authRepository.getUserId())
+                        .doOnSubscribe(() -> toiletListView.showProgress())
+                        .subscribe(strike -> {
+                                    toiletListView.hideProgress();
+                                }
+                                , throwable -> toiletListView.hideProgress());
+                break;
+        }
+    }
+
+    public void feedbackLeaved(CharSequence input) {
+        feedbackRepository.putFeedback(authRepository.getUserId(), input.toString())
+                .doOnSubscribe(() -> toiletListView.showProgress())
+                .subscribe(feedback -> toiletListView.hideProgress(), throwable -> {
+                    toiletListView.hideProgress();
+                    Timber.e(throwable.getMessage(), throwable);
+                });
+    }
+
+    public void feedbackPressed() {
+        if (authRepository.isSignedIn()) {
+            toiletListView.showFeedbackForm();
+        } else {
+            toiletListView.navigateToAuth();
+        }
+    }
+
+    private long lastUpdateTime;
+    private static final long REFRESH_PERIOD = 1000 * 5;
+
+    public void refresh() {
+        if (System.currentTimeMillis() - lastUpdateTime > REFRESH_PERIOD) {
+            loadToilets();
+            lastUpdateTime = System.currentTimeMillis();
+        } else {
+            toiletListView.hideProgress();
         }
     }
 }

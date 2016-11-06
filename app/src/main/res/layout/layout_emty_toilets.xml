@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/empty_view"
+    style="@style/Base.TextAppearance.AppCompat.Title"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:drawableBottom="@drawable/arrow_wrapper"
+    android:gravity="center"
+    android:text="@string/there_no_toilets_added_for_your_city_you_can_fix_it_by_adding_toilet_by_yourself"
+    android:textColor="@color/textColorSecondary"
+    android:visibility="gone">
+
+</TextView>
