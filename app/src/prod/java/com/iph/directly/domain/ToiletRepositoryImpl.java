@@ -7,6 +7,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.iph.directly.domain.apimodel.CityToiletsResponse;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.domain.rest.ToiletApi;
@@ -19,12 +20,15 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import okhttp3.ResponseBody;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 /**
@@ -56,18 +60,28 @@ public class ToiletRepositoryImpl implements ToiletRepository {
 
     @Override
     public Observable<List<Toilet>> getToilets(Location location) {
-        return toiletApi.toiletList(location.getCity().replace("\'", "") + "_wc")
-                .flatMap(cityToiletsResponse ->
-                        toiletApi.getToiletsSource(cityToiletsResponse.getResourceUrl()))
-                .flatMap(responseBody -> Observable.create((Observable.OnSubscribe<List<Toilet>>) subscriber -> {
-                    try {
-                        String string = responseBody.body().string();
-                        subscriber.onNext(parseToilets(string));
-                        subscriber.onCompleted();
-                    } catch (IOException | ParseException e) {
-                        subscriber.onError(e);
-                    }
-                })).zipWith(getToiletsFromFirebase(location.getCity()), (toilets, toilets2) -> {
+        return Observable.zip(toiletApi.toiletList(location.getCity().replace("\'", "") + "_wc")
+                        .onErrorResumeNext(Observable.empty())
+                        .switchIfEmpty(Observable.just(CityToiletsResponse.EMPTY))
+                        .flatMap(cityToiletsResponse -> {
+                            if (cityToiletsResponse == CityToiletsResponse.EMPTY) {
+                                return Observable.just(null);
+                            } else {
+                                return toiletApi.getToiletsSource(cityToiletsResponse.getResourceUrl());
+                            }
+                        })
+                        .flatMap(responseBody ->
+                                Observable.create((Observable.OnSubscribe<List<Toilet>>) subscriber -> {
+                                    try {
+                                        String string = responseBody.body().string();
+                                        subscriber.onNext(parseToilets(string));
+                                        subscriber.onCompleted();
+                                    } catch (IOException | ParseException e) {
+                                        subscriber.onError(e);
+                                    }
+                                })).onErrorResumeNext(Observable.just(Collections.emptyList()))
+
+                , getToiletsFromFirebase(location.getCity()), (toilets, toilets2) -> {
                     List<Toilet> resultToilets = new ArrayList<Toilet>(toilets);
                     resultToilets.addAll(toilets2);
                     return resultToilets;

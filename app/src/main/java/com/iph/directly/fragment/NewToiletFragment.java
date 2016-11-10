@@ -62,6 +62,7 @@ public class NewToiletFragment extends Fragment implements NewToiletView {
     }
 
     private static final int PLACE_AUTOCOMPLETE_REQUEST_CODE = 1232;
+    private static final int LOCATION_ENABLE_REQUEST_CODE = 32;
     private EditText address;
     private CheckBox isFullDay;
     private TextView startTime;
@@ -78,7 +79,7 @@ public class NewToiletFragment extends Fragment implements NewToiletView {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        newToiletPresenter = new NewToiletPresenter(this, Injector.provideToiletRepository(getActivity()), Injector.provideLocationRepository(getActivity()));
+        newToiletPresenter = new NewToiletPresenter(this, Injector.provideToiletRepository(getActivity()), Injector.provideLocationRepository(this, getActivity(), LOCATION_ENABLE_REQUEST_CODE));
     }
 
     @Nullable

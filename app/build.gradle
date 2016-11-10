@@ -9,10 +9,13 @@ repositories {
 android {
     signingConfigs {
         config {
-            keyAlias 'directly'
-            keyPassword 'gtxtymrj'
-            storeFile file('E:/trash/directly.jks')
-            storePassword 'gtxtymrj'
+            def Properties localProps = new Properties()
+            localProps.load(new FileInputStream(file('/keystore.properties')))
+
+            storeFile file(localProps["keystore.storeFile"])
+            keyAlias localProps["keystore.alias"]
+            storePassword localProps["keystore.storePassword"]
+            keyPassword localProps["keystore.keyPassword"]
         }
     }
     compileSdkVersion 25
@@ -21,8 +24,8 @@ android {
         applicationId "com.iph.directly"
         minSdkVersion 15
         targetSdkVersion 25
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -32,7 +35,7 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.config
         }

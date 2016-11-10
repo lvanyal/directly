@@ -1,5 +1,6 @@
 package com.iph.directly.presenter;
 
+import com.google.android.gms.location.places.Place;
 import com.iph.directly.domain.DeviceInfo;
 import com.iph.directly.domain.DirectionRepository;
 import com.iph.directly.domain.AuthRepository;
@@ -8,12 +9,10 @@ import com.iph.directly.domain.LocationRepository;
 import com.iph.directly.domain.StrikeRepository;
 import com.iph.directly.domain.ToiletRepository;
 import com.iph.directly.domain.model.Location;
-import com.iph.directly.domain.model.Strike;
 import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.view.ToiletListView;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,8 +37,7 @@ public class ToiletListPresenter {
 
     private Location location;
 
-    private Subscription currentToiletSubscription;
-    private Subscription currentLocationSubscription;
+    private List<Subscription> subscriptions = new ArrayList<>();
     private List<Toilet> toilets = new ArrayList<>();
 
     private DeviceInfo deviceInfo;
@@ -65,16 +63,21 @@ public class ToiletListPresenter {
     }
 
     public void start() {
-        if (toilets.isEmpty()) {
-            loadToilets();
+        if (location == null) {
+            toiletListView.showNoLocationView();
         } else {
-            toiletListView.showToiletList(toilets);
+            toiletListView.showCityName(location.getCity());
+            if (toilets.isEmpty()) {
+                loadToilets();
+            } else {
+                toiletListView.showToiletList(toilets);
+            }
+            toiletListView.updateSignInStatus(authRepository.isSignedIn());
         }
-        toiletListView.updateSignInStatus(authRepository.isSignedIn());
     }
 
     private void loadToilets() {
-        currentToiletSubscription = toiletRepository.getToilets(location)
+        Subscription currentToiletSubscription = toiletRepository.getToilets(location)
                 .doOnSubscribe(() -> toiletListView.showProgress())
                 .subscribe(toilets -> {
                     toiletListView.hideProgress();
@@ -83,16 +86,40 @@ public class ToiletListPresenter {
                     } else {
                         this.toilets = toilets;
                         toiletListView.showToiletList(toilets);
+                        toiletListView.hideLocationNotEnabledView();
+                        toiletListView.hideEmptyView();
                         loadDistances();
                     }
                 }, throwable -> {
                     toiletListView.hideProgress();
-                    Timber.e(throwable.getMessage(), throwable);
+                    toiletListView.hideEmptyView();
+                    Timber.e(throwable, throwable.getMessage());
+                });
+        subscriptions.add(currentToiletSubscription);
+    }
+
+    public void enableLocationButtonClick() {
+        loadCurrentLocation();
+    }
+
+    private void loadCurrentLocation() {
+        locationRepository.getCurrentLocation()
+                .doOnSubscribe(() -> toiletListView.showProgress())
+                .subscribe(location1 -> {
+                    this.location = location1;
+                    loadToilets();
+                    toiletListView.hideLocationNotEnabledView();
+                }, throwable -> {
+                    toiletListView.hideProgress();
+                    Timber.e(throwable, throwable.getMessage());
+                    if (throwable instanceof SecurityException) {
+                        toiletListView.showRequestLocationPermission();
+                    }
                 });
     }
 
     private void loadDistances() {
-        currentLocationSubscription = Observable.from(toilets)
+        Subscription currentLocationSubscription = Observable.from(toilets)
                 .flatMap(toilet -> locationRepository.initPlaceId(location, toilet))
                 .flatMap(toilet ->
                         toilet.getPlaceId() != null || toilet.getLatitude() != 0 ? directionRepository.initDistanceToToilet(ToiletListPresenter.this.location, toilet) : Observable.just(toilet))
@@ -112,20 +139,13 @@ public class ToiletListPresenter {
                     this.toilets = toilets;
                     toiletListView.updateToiletPositionInList(toilets);
                 }, throwable -> {
-                    Timber.e(throwable.getMessage(), throwable);
+                    Timber.e(throwable, throwable.getMessage());
                 });
+        subscriptions.add(currentLocationSubscription);
     }
 
     public void stop() {
-        if (currentToiletSubscription != null) {
-            currentToiletSubscription.unsubscribe();
-            currentToiletSubscription = null;
-        }
-
-        if (currentLocationSubscription != null) {
-            currentLocationSubscription.unsubscribe();
-            currentLocationSubscription = null;
-        }
+        Observable.from(subscriptions).subscribe(Subscription::unsubscribe);
     }
 
     public void toiletChoose(Toilet toilet) {
@@ -159,11 +179,10 @@ public class ToiletListPresenter {
 
     public void toiletContextMenuOpen(Toilet toilet) {
         if (authRepository.isSignedIn()) {
-            toiletListView.showProgress();
             if (!toilet.hasId()) {
                 toilet.generateId();
             }
-            strikeRepository.isToiletStrikedByUser(toilet.getId(), authRepository.getUserId()).subscribe(alreadyStriked -> {
+            Subscription subscription = strikeRepository.isToiletStrikedByUser(toilet.getId(), authRepository.getUserId()).subscribe(alreadyStriked -> {
                         if (alreadyStriked) {
                             toiletListView.showToiletMenu(toilet, ToiletListView.ToiletMenuItem.UNSTRIKE);
                         } else {
@@ -171,6 +190,7 @@ public class ToiletListPresenter {
                         }
                     }, throwable -> toiletListView.hideProgress()
             );
+            subscriptions.add(subscription);
         } else {
             toiletListView.navigateToAuth();
         }
@@ -179,31 +199,34 @@ public class ToiletListPresenter {
     public void toiletMenuItemChosen(Toilet toilet, ToiletListView.ToiletMenuItem toiletMenuItem) {
         switch (toiletMenuItem) {
             case STRIKE:
-                strikeRepository.putStrike(toilet.getId(), authRepository.getUserId())
+                Subscription subscription = strikeRepository.putStrike(toilet.getId(), authRepository.getUserId())
                         .doOnSubscribe(() -> toiletListView.showProgress())
                         .subscribe(strike -> {
                                     toiletListView.hideProgress();
                                 }
                                 , throwable -> toiletListView.hideProgress());
+                subscriptions.add(subscription);
                 break;
             case UNSTRIKE:
-                strikeRepository.removeStrike(toilet.getId(), authRepository.getUserId())
+                Subscription subscription1 = strikeRepository.removeStrike(toilet.getId(), authRepository.getUserId())
                         .doOnSubscribe(() -> toiletListView.showProgress())
                         .subscribe(strike -> {
                                     toiletListView.hideProgress();
                                 }
                                 , throwable -> toiletListView.hideProgress());
+                subscriptions.add(subscription1);
                 break;
         }
     }
 
     public void feedbackLeaved(CharSequence input) {
-        feedbackRepository.putFeedback(authRepository.getUserId(), input.toString())
+        Subscription subscription = feedbackRepository.putFeedback(authRepository.getUserId(), input.toString())
                 .doOnSubscribe(() -> toiletListView.showProgress())
                 .subscribe(feedback -> toiletListView.hideProgress(), throwable -> {
                     toiletListView.hideProgress();
-                    Timber.e(throwable.getMessage(), throwable);
+                    Timber.e(throwable, throwable.getMessage());
                 });
+        subscriptions.add(subscription);
     }
 
     public void feedbackPressed() {
@@ -224,5 +247,25 @@ public class ToiletListPresenter {
         } else {
             toiletListView.hideProgress();
         }
+    }
+
+    public void locationEnabledSuccess() {
+        loadCurrentLocation();
+    }
+
+    public void locationPermissionSuccess() {
+        loadCurrentLocation();
+    }
+
+    public void citySelected(Place place) {
+        Subscription subscription = locationRepository.getLocationFromLatLng(place.getLatLng().latitude, place.getLatLng().longitude)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(location1 -> {
+                    this.location = location1;
+                    toiletListView.showCityName(location1.getCity());
+                    loadToilets();
+                });
+        subscriptions.add(subscription);
     }
 }
