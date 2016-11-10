@@ -9,6 +9,4 @@
     android:gravity="center"
     android:text="@string/there_no_toilets_added_for_your_city_you_can_fix_it_by_adding_toilet_by_yourself"
     android:textColor="@color/textColorSecondary"
-    android:visibility="gone">
-
-</TextView>
+    android:visibility="gone"/>

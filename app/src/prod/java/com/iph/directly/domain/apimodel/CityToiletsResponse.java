@@ -7,6 +7,9 @@ import java.util.List;
  */
 
 public class CityToiletsResponse {
+
+    public static final CityToiletsResponse EMPTY = new CityToiletsResponse();
+
     private boolean success;
 
     private Result result;

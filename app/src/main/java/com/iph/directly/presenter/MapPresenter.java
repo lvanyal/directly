@@ -44,7 +44,7 @@ public class MapPresenter {
             List<LatLng> latLngs = PolyUtil.decode(routeResponse.getPoints());
             mapView.showDirection(latLngs, toilet);
         }, throwable -> {
-            Timber.e(throwable.getMessage(), throwable);
+            Timber.e(throwable, throwable.getMessage());
         });
     }
 

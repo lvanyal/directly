@@ -1,5 +1,8 @@
 package com.iph.directly.view;
 
+import android.app.PendingIntent;
+
+import com.google.android.gms.common.api.Status;
 import com.iph.directly.domain.model.Location;
 
 /**

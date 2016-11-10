@@ -1,9 +1,5 @@
 package com.iph.directly.presenter;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.support.v4.app.ActivityCompat;
-
 import com.iph.directly.domain.LocationRepository;
 import com.iph.directly.domain.model.Location;
 import com.iph.directly.view.LoadingView;
@@ -32,14 +28,14 @@ public class LoadingPresenter {
 
     public void start() {
         loadingView.showProgress();
-        currentSubscription = locationRepository.getCurrentLocation()
-                .observeOn(AndroidSchedulers.mainThread()).subscribe(location -> {
+        currentSubscription = locationRepository.getCurrentLocation().subscribe(location -> {
             loadingView.navigateToToilets(location);
         }, throwable -> {
             if (throwable instanceof SecurityException) {
                 loadingView.showRequestLocationPermission();
-            } else
-            Timber.e(throwable.getMessage(), throwable);
+            } else {
+                Timber.e(throwable, throwable.getMessage());
+            }
         });
     }
 
@@ -55,6 +51,14 @@ public class LoadingPresenter {
     }
 
     public void locationPermissionFailed() {
+        loadingView.navigateToToilets(null);
+    }
+
+    public void locationEnabledSuccess() {
+        start();
+    }
+
+    public void locationEnabledFailed() {
         loadingView.navigateToToilets(null);
     }
 }

@@ -9,7 +9,6 @@ import com.iph.directly.domain.LocationRepository;
 import com.iph.directly.domain.ToiletRepository;
 import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.view.NewToiletView;
-import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 
 import java.util.Locale;
 
@@ -43,7 +42,7 @@ public class NewToiletPresenter {
                     this.latLng = location.getLatLng();
                     this.city = location.getCity();
                     newToiletView.showAddress(String.format(Locale.getDefault(), "%s, %s", location.getStreet(), location.getBuildingNumber()));
-                }, throwable -> Timber.e(throwable.getMessage(), throwable));
+                }, throwable -> Timber.e(throwable, throwable.getMessage()));
     }
 
     public void stop() {
@@ -55,8 +54,11 @@ public class NewToiletPresenter {
     }
 
     public void placeSelected(Place place) {
-        this.latLng = place.getLatLng();
-        newToiletView.showAddress(place.getAddress().toString());
+        locationRepository.getLocationFromLatLng(place.getLatLng().latitude, place.getLatLng().longitude).subscribe(location -> {
+            this.latLng = place.getLatLng();
+            this.city = location.getCity();
+            newToiletView.showAddress(place.getAddress().toString());
+        });
     }
 
     public void createButtonClicked() {
@@ -85,7 +87,7 @@ public class NewToiletPresenter {
     private void saveToilet(Toilet toilet) {
         toiletRepository.saveToilet(toilet)
                 .subscribe(toilet1 -> newToiletView.navigateToToiletList(toilet1)
-                , throwable -> Timber.e(throwable.getMessage(), throwable));
+                        , throwable -> Timber.e(throwable, throwable.getMessage()));
     }
 
     private boolean validateToilet(Toilet toilet) {

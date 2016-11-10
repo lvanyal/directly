@@ -7,6 +7,8 @@ import com.crashlytics.android.Crashlytics;
 import com.directly.iph.directly.BuildConfig;
 
 import io.fabric.sdk.android.Fabric;
+import rx.plugins.RxJavaErrorHandler;
+import rx.plugins.RxJavaPlugins;
 import timber.log.Timber;
 
 /**
@@ -18,6 +20,7 @@ public class DirectlyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
         Fabric.with(this, new Crashlytics());
 
         if (BuildConfig.DEBUG) {

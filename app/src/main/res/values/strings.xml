@@ -55,5 +55,8 @@
     <string name="leave_your_feedback">Leave your feedback</string>
     <string name="app_is_normal">The app is great</string>
     <string name="there_no_toilets_added_for_your_city_you_can_fix_it_by_adding_toilet_by_yourself">There no toilets added for your city. You can fix it by adding toilet by yourself.</string>
+    <string name="location_is_not_enabled_choose_city_above">Location is not enabled, choose city above or</string>
+    <string name="enable_location">Enable location</string>
+    <string name="choose_city">Choose city</string>
 
 </resources>

@@ -1,9 +1,13 @@
 package com.iph.directly.fragment;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
@@ -24,6 +28,10 @@ import android.widget.TextView;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.directly.iph.directly.R;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.iph.directly.domain.Injector;
 import com.iph.directly.domain.auth.Authorizer;
 import com.iph.directly.domain.model.Location;
@@ -41,6 +49,7 @@ import java.util.Locale;
 
 import rx.Observable;
 import rx.functions.Action1;
+import timber.log.Timber;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -52,8 +61,12 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
     public static final String NEW_TOILET_TAG = "newToilet";
     public static final String TAG = ToiletListFragment.class.getName();
     public static final String EXTRA_NEW_TOILET = "extra_new_toilet";
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1105;
+    private static final int PLACE_AUTOCOMPLETE_REQUEST_CODE = 1108;
 
-    private SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm");
+    private static int LOCATION_ENABLE_REQUEST_CODE = 2345;
+
+    private SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm", Locale.getDefault());
 
     private Comparator<Toilet> DISTANCE_COMPARATOR = (toilet1, toilet2) -> {
         if (toilet2.getDistance() == 0) {
@@ -80,6 +93,9 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
     private FloatingActionButton addToiletButton;
     private SwipeRefreshLayout swipeRefreshLayout;
     private View emptyView;
+    private View locationOffView;
+    private View enableLocationButton;
+    private TextView cityNameView;
 
     private Authorizer authorizer;
 
@@ -92,9 +108,15 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         ((AppCompatActivity) getActivity()).setSupportActionBar((android.support.v7.widget.Toolbar) view.findViewById(R.id.toolbar));
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayShowTitleEnabled(false);
         addToiletButton = (FloatingActionButton) view.findViewById(R.id.add_toilet_button);
         addToiletButton.setOnClickListener(addToiletClickListener);
+        cityNameView = (TextView) view.findViewById(R.id.toolbar_title);
+        cityNameView.setOnClickListener(view1 -> showLocationChooser());
         emptyView = view.findViewById(R.id.empty_view);
+        locationOffView = view.findViewById(R.id.location_off_view);
+        enableLocationButton = locationOffView.findViewById(R.id.enable_location_button);
+        enableLocationButton.setOnClickListener(view1 -> toiletListPresenter.enableLocationButtonClick());
         swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_to_refresh);
         swipeRefreshLayout.setOnRefreshListener(() -> toiletListPresenter.refresh());
         toiletListView = (RecyclerView) view.findViewById(R.id.toilet_list);
@@ -125,7 +147,7 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
         Location location = getArguments().getParcelable(EXTRA_LOCATION);
         toiletListPresenter = new ToiletListPresenter(this
                 , Injector.provideToiletRepository(getActivity())
-                , Injector.provideLocationRepository(getActivity())
+                , Injector.provideLocationRepository(this, getActivity(), LOCATION_ENABLE_REQUEST_CODE)
                 , Injector.provideDirectionRepository(getActivity())
                 , authorizer
                 , Injector.provideStrikeRepository()
@@ -134,11 +156,20 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
                 , location);
     }
 
-
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        authorizer.onActivityResult(requestCode, resultCode, data);
+    public void showCityName(String cityName) {
+        this.cityNameView.setText(cityName);
+    }
+
+    public void showLocationChooser() {
+        try {
+            Intent intent =
+                    new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_OVERLAY)
+                            .build(getActivity());
+            startActivityForResult(intent, PLACE_AUTOCOMPLETE_REQUEST_CODE);
+        } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
+            Timber.e(e, "", "");
+        }
     }
 
     @Override
@@ -166,6 +197,7 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
         this.isSignedIn = isSignedIn;
         getActivity().invalidateOptionsMenu();
     }
+
 
     @Override
     public void showToiletMenu(Toilet toilet, ToiletMenuItem... toiletMenuItems) {
@@ -264,11 +296,53 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
     @Override
     public void showEmptyView() {
         emptyView.setVisibility(View.VISIBLE);
+        toiletsAdapter.setToilets(Collections.emptyList());
+        toiletsAdapter.notifyDataSetChanged();
+        toiletListView.setVisibility(View.GONE);
     }
 
     @Override
     public void hideEmptyView() {
         emptyView.setVisibility(View.GONE);
+        toiletListView.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void showRequestLocationPermission() {
+        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION
+                        , Manifest.permission.ACCESS_COARSE_LOCATION}
+                , LOCATION_PERMISSION_REQUEST_CODE);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        new Handler().post(() -> {
+            if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+                if (grantResults.length == 2 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    toiletListPresenter.locationPermissionSuccess();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        authorizer.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == LOCATION_ENABLE_REQUEST_CODE) {
+                new Handler().post(() -> {
+                    toiletListPresenter.locationEnabledSuccess();
+                });
+            }
+            if (requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE) {
+                Place place = PlaceAutocomplete.getPlace(getActivity(), data);
+                toiletListPresenter.citySelected(place);
+            }
+        }
+
+
     }
 
     @Override
@@ -332,6 +406,16 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
         mapIntent.setPackage("com.google.android.apps.maps");
         startActivity(mapIntent);
+    }
+
+    @Override
+    public void showNoLocationView() {
+        locationOffView.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void hideLocationNotEnabledView() {
+        locationOffView.setVisibility(View.GONE);
     }
 
     private class ToiletsAdapter extends RecyclerView.Adapter<ToiletHolder> {

@@ -11,6 +11,8 @@ import java.util.List;
  */
 
 public interface ToiletListView {
+
+
     enum ToiletMenuItem {
         STRIKE(R.string.strike), UNSTRIKE(R.string.unstrike);
 
@@ -20,6 +22,8 @@ public interface ToiletListView {
 
         public int resId;
     }
+
+    void showRequestLocationPermission();
 
     void showToiletList(List<Toilet> toilets);
 
@@ -45,5 +49,11 @@ public interface ToiletListView {
 
     void updateSignInStatus(boolean isSignedIn);
 
+    void showNoLocationView();
+
+    void hideLocationNotEnabledView();
+
     void showToiletMenu(Toilet toilet, ToiletMenuItem... toiletMenuItems);
+
+    void showCityName(String cityName);
 }
