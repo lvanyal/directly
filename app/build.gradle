@@ -76,7 +76,7 @@ dependencies {
     compile 'com.google.firebase:firebase-auth:9.8.0'
     compile 'com.google.firebase:firebase-database:9.8.0'
     compile 'com.jakewharton.timber:timber:3.1.0'
-    compile 'com.facebook.android:facebook-android-sdk:4.16.1'
+    compile 'com.facebook.android:facebook-android-sdk:4.17.0'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-beta1'
     compile 'com.wdullaer:materialdatetimepicker:2.5.0'
     compile('com.crashlytics.sdk.android:crashlytics:2.6.5@aar') {
