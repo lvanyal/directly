@@ -60,7 +60,8 @@ public class ToiletRepositoryImpl implements ToiletRepository {
 
     @Override
     public Observable<List<Toilet>> getToilets(Location location) {
-        return Observable.zip(toiletApi.toiletList(location.getCity().replace("\'", "") + "_wc")
+        String city = location.getCity().replace("\'", "");
+        return Observable.zip(toiletApi.toiletList(city + "_wc")
                         .onErrorResumeNext(Observable.empty())
                         .switchIfEmpty(Observable.just(CityToiletsResponse.EMPTY))
                         .flatMap(cityToiletsResponse -> {
@@ -81,7 +82,7 @@ public class ToiletRepositoryImpl implements ToiletRepository {
                                     }
                                 })).onErrorResumeNext(Observable.just(Collections.emptyList()))
 
-                , getToiletsFromFirebase(location.getCity()), (toilets, toilets2) -> {
+                , getToiletsFromFirebase(city), (toilets, toilets2) -> {
                     List<Toilet> resultToilets = new ArrayList<Toilet>(toilets);
                     resultToilets.addAll(toilets2);
                     return resultToilets;

@@ -11,6 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:contentDescription=""
         android:layout_marginTop="16dp"
         android:text="@string/add_toilet_title" />
 
@@ -40,6 +41,7 @@
             android:layout_width="64dp"
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
+            android:contentDescription="@string/current_location_button"
             android:padding="16dp"
             app:srcCompat="@drawable/ic_my_location_black_24px" />
     </LinearLayout>

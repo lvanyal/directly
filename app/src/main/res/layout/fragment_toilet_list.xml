@@ -50,6 +50,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
+        android:contentDescription="@string/create_toilet_button"
         app:fabSize="normal"
         app:layout_behavior="com.iph.directly.ui.FabBehavior"
         app:srcCompat="@mipmap/ic_add_toilet" />
