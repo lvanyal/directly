@@ -19,6 +19,7 @@ import com.directly.iph.directly.R;
 import com.google.android.gms.common.ErrorDialogFragment;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.common.data.DataBufferObserver;
 import com.google.android.gms.internal.zzc;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
@@ -34,6 +35,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import retrofit2.Retrofit;
+import rx.Observable;
 import timber.log.Timber;
 
 import static android.app.Activity.RESULT_OK;
@@ -47,8 +49,8 @@ public class NewToiletFragment extends Fragment implements NewToiletView {
     private static final int DEFAULT_START_TIME_HOUR = 9;
     private static final int DEFAULT_END_TIME_HOUR = 21;
 
-    private static final long DEFAULT_START_TIME = DEFAULT_START_TIME_HOUR * 60 * 60 * 1000;
-    private static final long DEFAULT_END_TIME = DEFAULT_END_TIME_HOUR * 60 * 60 * 1000;
+    public static final String EXTRA_CURRENT_USER_ID = "extra_current_user_id";
+    public static final String EXTRA_TOILET = "extra_toilet";
 
     private Calendar startTimeCal = Calendar.getInstance();
     private Calendar endTimeCal = Calendar.getInstance();
@@ -79,7 +81,10 @@ public class NewToiletFragment extends Fragment implements NewToiletView {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        newToiletPresenter = new NewToiletPresenter(this, Injector.provideToiletRepository(getActivity()), Injector.provideLocationRepository(this, getActivity(), LOCATION_ENABLE_REQUEST_CODE));
+        String currentUserId = getArguments().getString(EXTRA_CURRENT_USER_ID);
+        Toilet toilet = getArguments().getParcelable(EXTRA_TOILET);
+        newToiletPresenter = new NewToiletPresenter(this, Injector.provideToiletRepository(getActivity()), Injector.provideLocationRepository(this, getActivity(), LOCATION_ENABLE_REQUEST_CODE)
+                , currentUserId, toilet);
     }
 
     @Nullable
@@ -210,5 +215,15 @@ public class NewToiletFragment extends Fragment implements NewToiletView {
                 .setTitle(R.string.error)
                 .setMessage(getString(resourceId))
                 .show();
+    }
+
+    @Override
+    public void showToilet(Toilet toilet) {
+        address.setText(toilet.getAddress());
+        isFullDay.setChecked(toilet.is24h());
+        startTime.setText(timeFormat.format(new Date(toilet.getStartTime())));
+        endTime.setText(timeFormat.format(new Date(toilet.getEndTime())));
+        price.setSelection((int) toilet.getPrice());
+        organization.setText(toilet.getName());
     }
 }

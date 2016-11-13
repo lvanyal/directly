@@ -54,14 +54,26 @@ public class StrikeRepositoryImpl implements StrikeRepository {
     }
 
     @Override
-    public Observable<Strike> putStrike(String toiletId, String userId) {
-        return Observable.create(new Observable.OnSubscribe<Strike>() {
+    public Observable<Integer> putStrike(String toiletId, String userId) {
+        return Observable.create(new Observable.OnSubscribe<Integer>() {
             @Override
-            public void call(Subscriber<? super Strike> subscriber) {
+            public void call(Subscriber<? super Integer> subscriber) {
                 Strike strike = new Strike(userId);
-                databaseReference.child(STRIKES_TREE).child(toiletId).child(userId).setValue(strike).addOnCompleteListener(task -> {
-                    subscriber.onNext(strike);
-                    subscriber.onCompleted();
+                DatabaseReference toiletStrikes = databaseReference.child(STRIKES_TREE).child(toiletId);
+                toiletStrikes.child(userId).setValue(strike).addOnCompleteListener(task -> {
+                    toiletStrikes.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            long strikeCount = dataSnapshot.getChildrenCount();
+                            subscriber.onNext((int) strikeCount);
+                            subscriber.onCompleted();
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
                 }).addOnFailureListener(subscriber::onError);
             }
         }).subscribeOn(Schedulers.newThread())

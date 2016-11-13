@@ -61,5 +61,6 @@
     <string name="my_location">My location</string>
     <string name="current_location_button">Current location button</string>
     <string name="create_toilet_button">Create toilet button</string>
+    <string name="edit_toilet">Edit</string>
 
 </resources>

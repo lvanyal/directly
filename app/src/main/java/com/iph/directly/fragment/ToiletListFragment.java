@@ -2,7 +2,6 @@ package com.iph.directly.fragment;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -12,9 +11,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
@@ -48,7 +45,6 @@ import java.util.List;
 import java.util.Locale;
 
 import rx.Observable;
-import rx.functions.Action1;
 import timber.log.Timber;
 
 /**
@@ -66,7 +62,7 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
 
     private static int LOCATION_ENABLE_REQUEST_CODE = 2345;
 
-    private SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm", Locale.getDefault());
+    private SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
     private Comparator<Toilet> DISTANCE_COMPARATOR = (toilet1, toilet2) -> {
         if (toilet2.getDistance() == 0) {
@@ -173,23 +169,35 @@ public class ToiletListFragment extends Fragment implements ToiletListView {
     }
 
     @Override
-    public void navigateToToiletCreation() {
+    public void navigateToToiletCreation(String userId) {
+        showNewToiletFragment(userId, null);
+    }
+
+    private void showNewToiletFragment(String userId, Toilet toilet) {
+        Bundle bundle = new Bundle();
+        if (userId != null) {
+            bundle.putString(NewToiletFragment.EXTRA_CURRENT_USER_ID, userId);
+        }
+        if (toilet != null) {
+            bundle.putParcelable(NewToiletFragment.EXTRA_TOILET, toilet);
+        }
         NewToiletFragment fragment;
         if (getActivity().getSupportFragmentManager().findFragmentByTag(NEW_TOILET_TAG) == null) {
             fragment = new NewToiletFragment();
-            getFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.container, fragment, NEW_TOILET_TAG)
-                    .addToBackStack(NEW_TOILET_TAG)
-                    .commit();
         } else {
             fragment = (NewToiletFragment) getActivity().getSupportFragmentManager().findFragmentByTag(NEW_TOILET_TAG);
-            getFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.container, fragment, NEW_TOILET_TAG)
-                    .addToBackStack(NEW_TOILET_TAG)
-                    .commit();
         }
+        fragment.setArguments(bundle);
+        getFragmentManager()
+                .beginTransaction()
+                .replace(R.id.container, fragment, NEW_TOILET_TAG)
+                .addToBackStack(NEW_TOILET_TAG)
+                .commit();
+    }
+
+    @Override
+    public void navigateToToiletEdition(Toilet toilet) {
+        showNewToiletFragment(null, toilet);
     }
 
     @Override

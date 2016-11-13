@@ -12,6 +12,6 @@ import rx.Observable;
 
 public interface StrikeRepository {
     Observable<Boolean> isToiletStrikedByUser(String toiletId, String userId);
-    Observable<Strike> putStrike(String toiletId, String userId);
+    Observable<Integer> putStrike(String toiletId, String userId);
     Observable<Object> removeStrike(String toiletId, String userId);
 }

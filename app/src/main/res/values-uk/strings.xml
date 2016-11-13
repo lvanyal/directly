@@ -12,13 +12,13 @@
     <string name="just_toilet">Просто туалет</string>
     <string name="create_toilet">Створити туалет</string>
     <string name="add_toilet_title">Додати туалет</string>
-    <string name="empty_address">Empty address</string>
+    <string name="empty_address">Порожня адреса</string>
     <string name="wait_location">Почекайте поки локація підтягнеться</string>
     <string name="empty_start_time">Порожній час початку роботи</string>
     <string name="error">Помилка</string>
     <string name="menu_item_login">Логін</string>
     <string name="menu_item_logout">Розлогінитись</string>
-    <string name="sort">Sort</string>
+    <string name="sort">Сортувати</string>
     <string name="menu_distance">Відстань</string>
     <string name="menu_price">Ціна</string>
     <string name="menu_time">Час</string>
@@ -28,13 +28,14 @@
     <string name="unstrike">Забрати скаргу</string>
     <string name="menu_feedback">Відгук</string>
     <string name="your_feedback_is_very_important">Ваш фідбек дуже важливий для нас</string>
-    <string name="leave_your_feedback">Leave your feedback</string>
+    <string name="leave_your_feedback">Залишіть відгук</string>
     <string name="app_is_normal">Додаток чудовий</string>
     <string name="there_no_toilets_added_for_your_city_you_can_fix_it_by_adding_toilet_by_yourself">Нема туалетів в твоєму місті. Можеш виправити це, додавши знайомий туалет кнопкою знизу.</string>
     <string name="location_is_not_enabled_choose_city_above">Геологація вимкнута, виберіть місто зверху або</string>
     <string name="enable_location">Ввімкніть геолокацію</string>
     <string name="choose_city">Виберіть місто</string>
-    <string name="my_location">My location</string>
-    <string name="current_location_button">Current location button</string>
-    <string name="create_toilet_button">Create toilet button</string>
+    <string name="my_location">Там де я</string>
+    <string name="current_location_button">Кнопка поточна локація</string>
+    <string name="create_toilet_button">Кнопка створити туалет</string>
+    <string name="edit_toilet">Редагувати</string>
 </resources>

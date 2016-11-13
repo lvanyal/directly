@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import com.directly.iph.directly.R;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.maps.model.LatLng;
+import com.iph.directly.domain.AuthRepository;
 import com.iph.directly.domain.LocationRepository;
 import com.iph.directly.domain.ToiletRepository;
 import com.iph.directly.domain.model.Toilet;
@@ -19,21 +20,35 @@ import timber.log.Timber;
  */
 
 public class NewToiletPresenter {
+
+    private String currentUserId;
     private NewToiletView newToiletView;
 
     private ToiletRepository toiletRepository;
     private LocationRepository locationRepository;
     private LatLng latLng;
     private String city;
+    private Toilet toilet;
 
-    public NewToiletPresenter(NewToiletView newToiletView, ToiletRepository toiletRepository, LocationRepository locationRepository) {
+    public NewToiletPresenter(NewToiletView newToiletView, ToiletRepository toiletRepository, LocationRepository locationRepository, String currentUserId, Toilet toilet) {
         this.newToiletView = newToiletView;
         this.toiletRepository = toiletRepository;
         this.locationRepository = locationRepository;
+        if (currentUserId != null) {
+            this.currentUserId = currentUserId;
+        } else {
+            this.toilet = toilet;
+            currentUserId = toilet.getAuthor();
+        }
+
     }
 
     public void start() {
-        showCurrentLocation();
+        if (this.toilet == null) {
+            showCurrentLocation();
+        } else {
+            newToiletView.showToilet(toilet);
+        }
     }
 
     private void showCurrentLocation() {
@@ -62,23 +77,29 @@ public class NewToiletPresenter {
     }
 
     public void createButtonClicked() {
-        if (latLng == null) {
-            newToiletView.showError(R.string.wait_location);
-            return;
+        if (this.toilet == null) {
+            if (latLng == null) {
+                newToiletView.showError(R.string.wait_location);
+                return;
+            }
+            this.toilet = new Toilet();
+            toilet.setCity(city);
+            toilet.setLatitude(latLng.latitude);
+            toilet.setLongitude(latLng.longitude);
+            toilet.setAuthor(currentUserId);
         }
-        Toilet toilet = new Toilet();
-        toilet.setLatitude(latLng.latitude);
-        toilet.setLongitude(latLng.longitude);
+
         toilet.setStartTime(newToiletView.getStartTime());
         toilet.setEndTime(newToiletView.getEndTime());
         toilet.setName(newToiletView.getName());
         toilet.setAddress(newToiletView.getAddress());
-        toilet.setCity(city);
         toilet.setPrice(newToiletView.getPrice());
         toilet.setIs24h(newToiletView.isFullDay());
+        if (!toilet.hasId()) {
+            toilet.generateId();
+        }
 
         if (validateToilet(toilet)) {
-            toilet.generateId();
             saveToilet(toilet);
         }
 

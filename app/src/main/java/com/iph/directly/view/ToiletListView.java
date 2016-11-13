@@ -14,7 +14,8 @@ public interface ToiletListView {
 
 
     enum ToiletMenuItem {
-        STRIKE(R.string.strike), UNSTRIKE(R.string.unstrike);
+        STRIKE(R.string.strike), UNSTRIKE(R.string.unstrike)
+        , EDIT(R.string.edit_toilet);
 
         ToiletMenuItem(int resId) {
             this.resId = resId;
@@ -41,7 +42,9 @@ public interface ToiletListView {
 
     void navigateToMapsApp(Toilet toilet);
 
-    void navigateToToiletCreation();
+    void navigateToToiletCreation(String userId);
+
+    void navigateToToiletEdition(Toilet toilet);
 
     void showFeedbackForm();
 

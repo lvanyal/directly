@@ -1,5 +1,8 @@
 package com.iph.directly.presenter;
 
+import android.text.TextUtils;
+import android.view.MenuItem;
+
 import com.google.android.gms.location.places.Place;
 import com.iph.directly.domain.DeviceInfo;
 import com.iph.directly.domain.DirectionRepository;
@@ -41,6 +44,9 @@ public class ToiletListPresenter {
     private List<Toilet> toilets = new ArrayList<>();
 
     private DeviceInfo deviceInfo;
+
+    private long lastUpdateTime;
+    private static final long REFRESH_PERIOD = 1000 * 5;
 
     public ToiletListPresenter(ToiletListView toiletListView
             , ToiletRepository toiletRepository
@@ -109,6 +115,7 @@ public class ToiletListPresenter {
                     this.location = location1;
                     loadToilets();
                     toiletListView.hideLocationNotEnabledView();
+                    toiletListView.showCityName(location1.getCity());
                 }, throwable -> {
                     toiletListView.hideProgress();
                     Timber.e(throwable, throwable.getMessage());
@@ -158,14 +165,14 @@ public class ToiletListPresenter {
 
     public void newToiletClicked() {
         if (authRepository.isSignedIn()) {
-            toiletListView.navigateToToiletCreation();
+            toiletListView.navigateToToiletCreation(authRepository.getUserId());
         } else {
             toiletListView.navigateToAuth();
         }
     }
 
     public void onUserSingedIn() {
-        toiletListView.navigateToToiletCreation();
+        toiletListView.navigateToToiletCreation(authRepository.getUserId());
     }
 
     public void loginLogoutPressed() {
@@ -183,11 +190,16 @@ public class ToiletListPresenter {
                 toilet.generateId();
             }
             Subscription subscription = strikeRepository.isToiletStrikedByUser(toilet.getId(), authRepository.getUserId()).subscribe(alreadyStriked -> {
+                        List<ToiletListView.ToiletMenuItem> menuItems = new ArrayList<>();
                         if (alreadyStriked) {
-                            toiletListView.showToiletMenu(toilet, ToiletListView.ToiletMenuItem.UNSTRIKE);
+                            menuItems.add(ToiletListView.ToiletMenuItem.UNSTRIKE);
                         } else {
-                            toiletListView.showToiletMenu(toilet, ToiletListView.ToiletMenuItem.STRIKE);
+                            menuItems.add(ToiletListView.ToiletMenuItem.STRIKE);
                         }
+                        if (TextUtils.equals(toilet.getAuthor(), authRepository.getUserId())) {
+                            menuItems.add(ToiletListView.ToiletMenuItem.EDIT);
+                        }
+                        toiletListView.showToiletMenu(toilet, menuItems.toArray(new ToiletListView.ToiletMenuItem[0]));
                     }, throwable -> toiletListView.hideProgress()
             );
             subscriptions.add(subscription);
@@ -201,7 +213,7 @@ public class ToiletListPresenter {
             case STRIKE:
                 Subscription subscription = strikeRepository.putStrike(toilet.getId(), authRepository.getUserId())
                         .doOnSubscribe(() -> toiletListView.showProgress())
-                        .subscribe(strike -> {
+                        .subscribe(strikeCount -> {
                                     toiletListView.hideProgress();
                                 }
                                 , throwable -> toiletListView.hideProgress());
@@ -216,6 +228,10 @@ public class ToiletListPresenter {
                                 , throwable -> toiletListView.hideProgress());
                 subscriptions.add(subscription1);
                 break;
+            case EDIT:
+                toiletListView.navigateToToiletEdition(toilet);
+                break;
+
         }
     }
 
@@ -236,9 +252,6 @@ public class ToiletListPresenter {
             toiletListView.navigateToAuth();
         }
     }
-
-    private long lastUpdateTime;
-    private static final long REFRESH_PERIOD = 1000 * 5;
 
     public void refresh() {
         if (System.currentTimeMillis() - lastUpdateTime > REFRESH_PERIOD) {

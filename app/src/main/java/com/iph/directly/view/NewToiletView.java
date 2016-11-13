@@ -24,4 +24,6 @@ public interface NewToiletView {
     void showError(int resourceId);
 
     void navigateToToiletList(Toilet toilet1);
+
+    void showToilet(Toilet toilet);
 }

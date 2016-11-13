@@ -50,6 +50,17 @@ public class Toilet implements Parcelable {
     @Exclude
     private int distance;
 
+    @Expose
+    private String author = "";
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
     public Toilet() {
     }
 
@@ -64,6 +75,7 @@ public class Toilet implements Parcelable {
         city = in.readString();
         latitude = in.readDouble();
         longitude = in.readDouble();
+        author = in.readString();
     }
 
     public static final Creator<Toilet> CREATOR = new Creator<Toilet>() {
@@ -193,6 +205,7 @@ public class Toilet implements Parcelable {
         result = 31 * result + address.hashCode();
         result = 31 * result + (is24h ? 1 : 0);
         result = 31 * result + city.hashCode();
+        result = 31 * result + author.hashCode();
         return Math.abs(result);
     }
 
@@ -213,6 +226,7 @@ public class Toilet implements Parcelable {
         dest.writeString(city);
         dest.writeDouble(latitude);
         dest.writeDouble(longitude);
+        dest.writeString(author);
     }
 
     public boolean hasId() {
