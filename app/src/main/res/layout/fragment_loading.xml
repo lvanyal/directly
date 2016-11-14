@@ -9,6 +9,7 @@
         android:layout_marginTop="128dp"
         android:layout_width="wrap_content"
         android:src="@mipmap/loading_image"
+        android:layout_gravity="center_horizontal"
         android:layout_height="128dp" />
 
     <ProgressBar

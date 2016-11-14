@@ -26,8 +26,10 @@ import com.iph.directly.domain.model.Toilet;
 import com.iph.directly.fragment.LoadingFragment;
 
 import java.util.List;
+import java.util.Locale;
 
 import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
+import pl.charmas.android.reactivelocation.observables.geocode.ReverseGeocodeObservable;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -84,7 +86,8 @@ public class LocationRepositoryImpl implements LocationRepository {
 
     @Override
     public Observable<Location> getLocationFromLatLng(double latitude, double longitude) {
-        return locationProvider.getReverseGeocodeObservable(latitude, longitude, 3).flatMap((Func1<List<Address>, Observable<Location>>) addresses -> {
+        return ReverseGeocodeObservable.createObservable(activity, Locale.UK, latitude, longitude, 10).flatMap((Func1<List<Address>, Observable<Location>>) addresses -> {
+
             Location myLocation = null;
             for (Address address : addresses) {
                 if (address.getLocality() != null) {
