@@ -1,2 +1,2 @@
-# directly (Навпростець)
-Додаток для пошуку найближчого туалета
+# directly
+Application for nearest toilet searching
